@@ -89,7 +89,7 @@ def main() -> None:
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("register", register))
-    dispatcher.add_handler(CommandHandler("login", login))
+    dispatcher.add_handler(CommandHandler("start", login))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
