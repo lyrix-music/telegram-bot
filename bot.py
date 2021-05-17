@@ -1,5 +1,5 @@
+import datetime
 import os
-import logging
 
 from spotipy import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
@@ -19,34 +19,22 @@ from lyrix.bot.app import LyrixApp
 from lyrix.bot.constants import SCOPES
 from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user
 from lyrix.bot.models import User
-
+from lyrix.bot.logging import setup_logging
 load_dotenv()
 
 
 client_id = os.environ["SPOTIPY_CLIENT_ID"]
 client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
 
-
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
+setup_logging()
 la = LyrixApp()
 la.load()
 
 
-music_controller = [
-    [
-        InlineKeyboardButton("Play this song ▶️", callback_data="play_for_me"),
-    ]
-]
-
-
-def help_command(update: Update, _: CallbackContext) -> None:
+def ping_command(update: Update, _: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    update.message.reply_text("Help!")
+    dt = datetime.datetime.now()
+    update.message.reply_text(f"pong! latency is {dt.date() - update.message.date.date()}")
 
 
 def echo(update: Update, ctx: CallbackContext) -> None:
@@ -68,6 +56,9 @@ def echo(update: Update, ctx: CallbackContext) -> None:
         args = commands[-1].strip()
         if args == "share":
             share_song_for_user(la, update.message, ctx)
+            return
+        elif args == "ping":
+            ping_command(update, _)
             return
 
 
@@ -138,7 +129,7 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("ping", ping_command))
     dispatcher.add_handler(CommandHandler("register", register))
     dispatcher.add_handler(CommandHandler("start", login))
 

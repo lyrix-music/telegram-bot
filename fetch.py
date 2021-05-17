@@ -8,6 +8,9 @@ from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 from lyrix.bot.app import LyrixApp
+from lyrix.bot.logging import make_logger
+
+logger = make_logger("core")
 
 
 def add_song_to_playlist(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
@@ -73,9 +76,14 @@ def _get_current_playing_song(
             message.chat_id, "Looks like you are not playing anything on Spotify."
         )
         return
+    elif track["item"] is None:
+        # FIXME: not really sure
+        ctx.bot.send_message(
+            message.chat_id, "😌👍 Ad time"
+        )
 
     # telegram doesnt like - character
-    song_name = escape(track["item"]["name"].replace("-", "\-"))
+    song_name = escape(track["item"]["name"].replace("-", "\-").replace(".", "\."))
     artist_names = [x["name"] for x in track["item"]["artists"]]
 
     return str(song_name), artist_names, track
@@ -93,7 +101,18 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
     try:
         url = track["item"]["external_urls"]["spotify"]
         right_now = f"{first_name} is currently playing [{song_name} by {artist_names_str}]({url})"
+        reply_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=" ▶️ Play this",
+                        url=f"{url}",
+                    )
+                ]
+            ]
+        ),
     except Exception:
+        reply_markup = None
         right_now = (
             f"{first_name} is currently playing {song_name} by {artist_names_str}"
         )
@@ -102,18 +121,8 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
         message.chat_id,
         right_now,
         parse_mode=telegram.ParseMode.MARKDOWN_V2,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=" ▶️ Play this",
-                        callback_data=f"/play {track['item']['uri']}",
-                    )
-                ]
-            ]
-        ),
+        reply_markup=reply_markup,
     )
-
     return
 
 
