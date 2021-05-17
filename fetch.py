@@ -86,11 +86,11 @@ def _get_current_playing_song(
         return
 
     # telegram doesnt like - character
-    song_name = escape(track["item"]["name"])
+    song_name = track["item"]["name"]
     artist_names = [x["name"] for x in track["item"]["artists"]]
     logger.info(f"{song_name} by {', '.join(artist_names)}")
 
-    return str(song_name), artist_names, track
+    return song_name, artist_names, track
 
 
 def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
@@ -107,7 +107,7 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     try:
         url = track["item"]["external_urls"]["spotify"]
-        right_now = f"{first_name} is currently playing <a href='{url}'>{song_name} by {artist_names_str}</a>"
+        right_now = f"{first_name} is currently playing <a href='{url}'>{escape(song_name)} by {artist_names_str}</a>"
         reply_markup = InlineKeyboardMarkup(
             [
                 [
@@ -122,7 +122,7 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
     except Exception:
         reply_markup = None
         right_now = (
-            f"{first_name} is currently playing {song_name} by {artist_names_str}"
+            f"{first_name} is currently playing {escape(song_name)} by {artist_names_str}"
         )
 
     ctx.bot.send_message(

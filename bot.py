@@ -43,6 +43,14 @@ def ping_command(update: Update, _: CallbackContext) -> None:
     )
 
 
+def get_lyrics(update: Update, ctx: CallbackContext) -> None:
+    get_lyrics_for_user(la, update.message, ctx)
+
+
+def share_song(update: Update, ctx: CallbackContext) -> None:
+    share_song_for_user(la, update.message, ctx)
+
+
 def echo(update: Update, ctx: CallbackContext) -> None:
     """Echo the user message."""
     try:
@@ -147,6 +155,8 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("ping", ping_command))
     dispatcher.add_handler(CommandHandler("register", register))
     dispatcher.add_handler(CommandHandler("start", login))
+    dispatcher.add_handler(CommandHandler("lyrix", get_lyrics))
+    dispatcher.add_handler(CommandHandler("sharesong", share_song))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
@@ -167,6 +177,7 @@ def main() -> None:
     logger.info("Writing files")
     la.write()
     logger.info("Exiting")
+
 
 if __name__ == "__main__":
     main()
