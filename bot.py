@@ -19,7 +19,7 @@ from lyrix.bot.app import LyrixApp
 from lyrix.bot.constants import SCOPES
 from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user
 from lyrix.bot.models import User
-from lyrix.bot.logging import setup_logging
+from lyrix.bot.logging import setup_logging, make_logger
 
 load_dotenv()
 
@@ -31,9 +31,12 @@ setup_logging()
 la = LyrixApp()
 la.load()
 
+t_logger = make_logger("tg")
+
 
 def ping_command(update: Update, _: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues ping command")
     dt = datetime.datetime.now()
     update.message.reply_text(
         f"pong! latency is {dt.date() - update.message.date.date()}"
@@ -61,12 +64,13 @@ def echo(update: Update, ctx: CallbackContext) -> None:
             share_song_for_user(la, update.message, ctx)
             return
         elif args == "ping":
-            ping_command(update, _)
+            ping_command(update, ctx)
             return
 
 
 def register(update: Update, _: CallbackContext) -> None:
     """Register a user"""
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues register command")
     handler = CacheFileHandler(
         username=str(update.message.from_user.id),
         cache_path=os.path.join(
@@ -97,7 +101,8 @@ def login(update: Update, ctx: CallbackContext) -> None:
     print(text_message)
     code = text_message[-1]
     if len(text_message) == 1:
-
+        t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
+                      f"issues /start command without args")
         # the user doesnt know yet.. lets give a demo
         ctx.bot.send_message(
             update.message.chat_id,
@@ -116,17 +121,24 @@ Do not paste the auth code in telegram groups.""",
         )
         return
 
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
+                  f"issues /start command with params")
     la.add_user(
         User(telegram_user_id=update.message.from_user.id, spotify_auth_token=code)
     )
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) has registered with lyrix")
     update.message.reply_text("✅ You are now authorized!")
-    print(la.db)
+
 
 
 def main() -> None:
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
+
+    logger = make_logger("main")
+    logger.info("Trying to login to telegram with token")
     updater = Updater(os.environ["TELEGRAM_BOT_TOKEN"])
+    logger.info("Login successful")
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -139,15 +151,22 @@ def main() -> None:
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
+    logger.info("Bot is up, and is ready to receive commands.")
+
     # Start the Bot
     updater.start_polling()
+    logger.info("Received terminate. Stopping")
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
+    logger.info("Trying to stop gracefully")
     updater.idle()
-    la.write()
+    logger.info("Completing exit")
 
+    logger.info("Writing files")
+    la.write()
+    logger.info("Exiting")
 
 if __name__ == "__main__":
     main()

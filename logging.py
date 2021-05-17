@@ -39,13 +39,13 @@ def setup_logging():
     coloredlogs.install(loglevel, **kwargs)
 
     # hide all other loggers by default
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
     base_logger.setLevel(loglevel)
 
     # allow user to re-enable some loggers for debugging
-    if "DEBUG_GITHUB" in os.environ:
-        logging.getLogger("github").setLevel(logging.INFO)
-        logging.getLogger("urllib3").setLevel(logging.INFO)
+    if "DEBUG_TELEGRAM" in os.environ:
+        logging.getLogger("telegram").setLevel(logging.INFO)
+        logging.getLogger("apscheduler").setLevel(logging.INFO)
 
 
 def make_logger(name: str = None) -> logging.Logger:
