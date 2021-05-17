@@ -65,30 +65,37 @@ def _get_current_playing_song(
         )
         return
 
-    print(
-        f"Getting currently playing song of {message.from_user.first_name} "
-        f"{message.from_user.last_name} with id {message.from_user.id}"
-    )
     sp = spotipy.Spotify(auth=user.get_access_token())
+    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
+                f"Authenticated with Spotify")
 
+    logger.info("Getting currently playing track on spotify")
     track = sp.current_user_playing_track()
+
     if track is None or not track["is_playing"]:
+        logger.info(f"{message.from_user.first_name} is not playing anything on Spotify.")
         ctx.bot.send_message(
             message.chat_id, "Looks like you are not playing anything on Spotify."
         )
         return
     elif track["item"] is None:
         # FIXME: not really sure
+        logger.info(f"{message.from_user.first_name} is likely to be having ads now.")
         ctx.bot.send_message(message.chat_id, "😌👍 Ad time")
+        return
 
     # telegram doesnt like - character
     song_name = escape(track["item"]["name"].replace("-", "\-").replace(".", "\."))
     artist_names = [x["name"] for x in track["item"]["artists"]]
+    logger.info(f"{song_name} by {', '.join(artist_names)}")
 
     return str(song_name), artist_names, track
 
 
 def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
+    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
+                f"requested to share the currently playing song.")
+
     currently_playing = _get_current_playing_song(la, message, ctx)
     if not currently_playing:
         return
@@ -128,6 +135,9 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
 
 def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
+    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
+                f"requested for lyrics of the currently playing song.")
+
     currently_playing = _get_current_playing_song(la, message, ctx)
     if not currently_playing:
         return
@@ -145,8 +155,12 @@ def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
         message.chat_id, right_now, parse_mode=telegram.ParseMode.MARKDOWN_V2
     )
 
+    logger.debug(f"Trying to get the lyrics for {song_name} by {artist_names_str}")
     lyrics = get_lyrics(song_name, artist_names[0])
     if lyrics is None or not lyrics:
+        logger.warn(f"Couldn't get the lyrics for {song_name} by {artist_names[0]}")
         ctx.bot.send_message(message.chat_id, "Couldn't find the lyrics. 😔😔😔")
         return
+
     ctx.bot.send_message(message.chat_id, lyrics)
+    logger.info("Lyrics sent successfully.")
