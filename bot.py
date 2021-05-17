@@ -20,6 +20,7 @@ from lyrix.bot.constants import SCOPES
 from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user
 from lyrix.bot.models import User
 from lyrix.bot.logging import setup_logging
+
 load_dotenv()
 
 
@@ -34,7 +35,9 @@ la.load()
 def ping_command(update: Update, _: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     dt = datetime.datetime.now()
-    update.message.reply_text(f"pong! latency is {dt.date() - update.message.date.date()}")
+    update.message.reply_text(
+        f"pong! latency is {dt.date() - update.message.date.date()}"
+    )
 
 
 def echo(update: Update, ctx: CallbackContext) -> None:

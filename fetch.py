@@ -10,6 +10,7 @@ from telegram.ext import CallbackContext
 from lyrix.bot.app import LyrixApp
 from lyrix.bot.logging import make_logger
 
+
 logger = make_logger("core")
 
 
@@ -78,9 +79,7 @@ def _get_current_playing_song(
         return
     elif track["item"] is None:
         # FIXME: not really sure
-        ctx.bot.send_message(
-            message.chat_id, "😌👍 Ad time"
-        )
+        ctx.bot.send_message(message.chat_id, "😌👍 Ad time")
 
     # telegram doesnt like - character
     song_name = escape(track["item"]["name"].replace("-", "\-").replace(".", "\."))
@@ -101,16 +100,18 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
     try:
         url = track["item"]["external_urls"]["spotify"]
         right_now = f"{first_name} is currently playing [{song_name} by {artist_names_str}]({url})"
-        reply_markup = InlineKeyboardMarkup(
-            [
+        reply_markup = (
+            InlineKeyboardMarkup(
                 [
-                    InlineKeyboardButton(
-                        text=" ▶️ Play this",
-                        url=f"{url}",
-                    )
+                    [
+                        InlineKeyboardButton(
+                            text=" ▶️ Play this",
+                            url=f"{url}",
+                        )
+                    ]
                 ]
-            ]
-        ),
+            ),
+        )
     except Exception:
         reply_markup = None
         right_now = (
