@@ -1,8 +1,9 @@
+from html import escape
 from typing import Tuple, Optional
 
 import spotipy
 import telegram
-from markupsafe import escape
+
 from swaglyrics.cli import get_lyrics
 from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
@@ -85,7 +86,7 @@ def _get_current_playing_song(
         return
 
     # telegram doesnt like - character
-    song_name = escape(track["item"]["name"].replace("-", "\-").replace(".", "\."))
+    song_name = escape(track["item"]["name"])
     artist_names = [x["name"] for x in track["item"]["artists"]]
     logger.info(f"{song_name} by {', '.join(artist_names)}")
 
@@ -106,19 +107,18 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     try:
         url = track["item"]["external_urls"]["spotify"]
-        right_now = f"{first_name} is currently playing [{song_name} by {artist_names_str}]({url})"
-        reply_markup = (
-            InlineKeyboardMarkup(
+        right_now = f"{first_name} is currently playing <a href='{url}'>{song_name} by {artist_names_str}</a>"
+        reply_markup = InlineKeyboardMarkup(
+            [
                 [
-                    [
-                        InlineKeyboardButton(
-                            text=" ▶️ Play this",
-                            url=f"{url}",
-                        )
-                    ]
+                    InlineKeyboardButton(
+                        text="▶️ Play this",
+                        url=f"{url}",
+                    )
                 ]
-            ),
+            ]
         )
+
     except Exception:
         reply_markup = None
         right_now = (
@@ -128,7 +128,7 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
     ctx.bot.send_message(
         message.chat_id,
         right_now,
-        parse_mode=telegram.ParseMode.MARKDOWN_V2,
+        parse_mode=telegram.ParseMode.HTML,
         reply_markup=reply_markup,
     )
     return
@@ -147,12 +147,12 @@ def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     try:
         url = track["item"]["external_urls"]["spotify"]
-        right_now = f"Getting lyrics for [{song_name} by {artist_names_str}]({url})"
+        right_now = f"Getting lyrics for <a href='{url}'>{song_name} by {artist_names_str}</a>"
     except Exception:
         right_now = f"Getting lyrics for {song_name} by {artist_names_str}"
 
     ctx.bot.send_message(
-        message.chat_id, right_now, parse_mode=telegram.ParseMode.MARKDOWN_V2
+        message.chat_id, right_now, parse_mode=telegram.ParseMode.HTML
     )
 
     logger.debug(f"Trying to get the lyrics for {song_name} by {artist_names_str}")
