@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 
 from spotipy import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
@@ -17,7 +18,8 @@ from dotenv import load_dotenv
 
 from lyrix.bot.app import LyrixApp
 from lyrix.bot.constants import SCOPES
-from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user
+from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user, play_song_with_spotify, \
+    clear_playlist_from_spotify, share_playlist_from_spotify
 from lyrix.bot.models import User
 from lyrix.bot.logging import setup_logging, make_logger
 
@@ -26,6 +28,7 @@ load_dotenv()
 
 client_id = os.environ["SPOTIPY_CLIENT_ID"]
 client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
+lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
 
 setup_logging()
 la = LyrixApp()
@@ -138,6 +141,27 @@ Do not paste the auth code in telegram groups.""",
     update.message.reply_text("✅ You are now authorized!")
 
 
+def add_to_playlist(update: Update, ctx: CallbackContext) -> None:
+    if update.message.reply_to_message is None:
+        update.message.reply_text("Reply to a song with /playthis command, or /playthis followed by spotify URL")
+        return
+    spotify_song = update.message.reply_to_message.text
+    print(spotify_song)
+    match = lyrix_id_match.findall(spotify_song)
+    if len(match) != 1:
+        update.message.reply_text("Not a valid song from lyrix. Can't play this.")
+        return
+    song_uri = match[0]
+
+    play_song_with_spotify(la, update.message, ctx, song_uri)
+
+
+def clear_playlist(update: Update, ctx: CallbackContext) -> None:
+    clear_playlist_from_spotify(la, update.message, ctx)
+
+def share_playlist(update: Update, ctx: CallbackContext) -> None:
+    share_playlist_from_spotify(la, update.message, ctx)
+
 
 def main() -> None:
     """Start the bot."""
@@ -157,6 +181,9 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("start", login))
     dispatcher.add_handler(CommandHandler("lyrix", get_lyrics))
     dispatcher.add_handler(CommandHandler("sharesong", share_song))
+    dispatcher.add_handler(CommandHandler("addtoplaylist", add_to_playlist))
+    dispatcher.add_handler(CommandHandler("clearplaylist", clear_playlist))
+    dispatcher.add_handler(CommandHandler("shareplaylist", share_playlist))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
@@ -165,7 +192,6 @@ def main() -> None:
 
     # Start the Bot
     updater.start_polling()
-
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
