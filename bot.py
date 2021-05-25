@@ -2,6 +2,9 @@ import datetime
 import os
 import re
 
+import requests
+import swaglyrics.cli as sl
+
 from spotipy import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -28,7 +31,9 @@ load_dotenv()
 
 client_id = os.environ["SPOTIPY_CLIENT_ID"]
 client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
+lyrix_backend = os.environ["LYRIX_BACKEND"]
 lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
+lyrix_backend_token = os.environ["LYRIX_BACKEND_TOKEN"]
 
 setup_logging()
 la = LyrixApp()
@@ -52,6 +57,39 @@ def get_lyrics(update: Update, ctx: CallbackContext) -> None:
 
 def share_song(update: Update, ctx: CallbackContext) -> None:
     share_song_for_user(la, update.message, ctx)
+
+
+def get_local_lyrics(update: Update, ctx: CallbackContext) -> None:
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues local lyrics song command")
+    req = requests.get(f"{lyrix_backend}/api/currentsong/{update.message.from_user.id}")
+    data = req.json()
+    if data is None:
+        update.message.reply_text(f"{update.message.from_user.first_name} is not playing any local song")
+        return
+    artist, song = data["artist"], data["song"]
+    ctx.bot.send_message(update.message.chat_id, f"Getting lyrics for <b>{song}</b> by <b>{artist}</b>", parse_mode="html")
+
+    lyrics = sl.get_lyrics(song, artist)
+    if lyrics is None or not lyrics:
+        t_logger.warn(f"Couldn't get the lyrics for {song} by {artist}")
+        ctx.bot.send_message(update.message.chat_id, "Couldn't find the lyrics. 😔😔😔")
+        return
+
+    ctx.bot.send_message(update.message.chat_id, lyrics)
+
+
+def share_local_song(update: Update, ctx: CallbackContext) -> None:
+    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues local share song command")
+    req = requests.get(f"{lyrix_backend}/api/currentsong/{update.message.from_user.id}")
+    data = req.json()
+    if data is None:
+        update.message.reply_text(f"{update.message.from_user.first_name} is not playing any local song")
+        return
+    artist, song = data["artist"], data["song"]
+    update.message.reply_text(f"{update.message.from_user.first_name} is now playing {song} by {artist}")
+
+def show_telegram_id(update: Update, ctx: CallbackContext) -> None:
+    update.message.reply_text(f"{update.message.from_user.id}")
 
 
 def echo(update: Update, ctx: CallbackContext) -> None:
@@ -180,10 +218,13 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("register", register))
     dispatcher.add_handler(CommandHandler("start", login))
     dispatcher.add_handler(CommandHandler("lyrix", get_lyrics))
+    dispatcher.add_handler(CommandHandler("locallyrix", get_local_lyrics))
     dispatcher.add_handler(CommandHandler("sharesong", share_song))
+    dispatcher.add_handler(CommandHandler("sharelocalsong", share_local_song))
     dispatcher.add_handler(CommandHandler("addtoplaylist", add_to_playlist))
     dispatcher.add_handler(CommandHandler("clearplaylist", clear_playlist))
     dispatcher.add_handler(CommandHandler("shareplaylist", share_playlist))
+    dispatcher.add_handler(CommandHandler("mytelegramid", show_telegram_id))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
