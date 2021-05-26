@@ -65,7 +65,7 @@ def get_local_lyrics(update: Update, ctx: CallbackContext) -> None:
     t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues local lyrics song command")
     req = requests.get(f"{lyrix_backend}/api/currentsong/{update.message.from_user.id}")
     data = req.json()
-    if data is None:
+    if not data:
         update.message.reply_text(f"{update.message.from_user.first_name} is not playing any local song")
         return
     artist, song = data["artist"], data["song"]
