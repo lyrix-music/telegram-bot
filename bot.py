@@ -215,6 +215,13 @@ def share_playlist(update: Update, ctx: CallbackContext) -> None:
     share_playlist_from_spotify(la, update.message, ctx)
 
 
+def send_commands(update: Update, ctx: CallbackContext, commands: list) -> None:
+    text_message = "<b>Lyrix Help</b>\n"
+    for command, help in commands:
+        text_message += f"- /{command[0]} - {help}\n"
+    update.message.reply_text(text_message, parse_mode="html")
+
+
 def main() -> None:
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
@@ -227,19 +234,24 @@ def main() -> None:
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
+
+    commands = [
+        [("ping", ping_command), "Ping the bot to see its alive"],
+        [("register", register), "Register with Lyrix bot"],
+        [("start", login), "Start the bot and get the initial registration instructions"],
+        [("lyrix", get_lyrics), "Get the lyrics of the current listening song on spotify."],
+        [("locallyrix", get_local_lyrics), "Get the local lyrix from lyrixd app from your desktop or mobile music player"],
+        [("sharesong", share_song), "Share your current listening song with your friends"],
+        [("sharelocalsong", share_local_song), "Share the song you are listening using lyrixd app from your desktop or mobile music player."],
+        [("addtoplaylist", add_to_playlist), "Adds the song to your spotify playlist"],
+        [("clearplaylist", clear_playlist), "Clear the lyrix spotify playlist"],
+        [("issueauthtoken", issue_lyrix_auth_token), "Create a lyrix authorization token"],
+        
+    ]
     # on different commands - answer in Telegram
-    dispatcher.add_handler(CommandHandler("ping", ping_command))
-    dispatcher.add_handler(CommandHandler("register", register))
-    dispatcher.add_handler(CommandHandler("start", login))
-    dispatcher.add_handler(CommandHandler("lyrix", get_lyrics))
-    dispatcher.add_handler(CommandHandler("locallyrix", get_local_lyrics))
-    dispatcher.add_handler(CommandHandler("sharesong", share_song))
-    dispatcher.add_handler(CommandHandler("sharelocalsong", share_local_song))
-    dispatcher.add_handler(CommandHandler("addtoplaylist", add_to_playlist))
-    dispatcher.add_handler(CommandHandler("clearplaylist", clear_playlist))
-    dispatcher.add_handler(CommandHandler("shareplaylist", share_playlist))
-    dispatcher.add_handler(CommandHandler("mytelegramid", show_telegram_id))
-    dispatcher.add_handler(CommandHandler("issueauthtoken", issue_lyrix_auth_token))
+    for command, _ in commands:
+        dispatcher.add_handler(CommandHandler(*command))
+    dispatcher.add_handler(CommandHandler("help", lambda update, ctx: send_commands(update, ctx, commands)))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
