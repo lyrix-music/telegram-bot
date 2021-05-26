@@ -1,9 +1,11 @@
 import datetime
 import os
 import re
+import hashlib
 
 import requests
 import swaglyrics.cli as sl
+from datetime import datetime
 
 from spotipy import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
@@ -90,6 +92,18 @@ def share_local_song(update: Update, ctx: CallbackContext) -> None:
 
 def show_telegram_id(update: Update, ctx: CallbackContext) -> None:
     update.message.reply_text(f"{update.message.from_user.id}")
+
+def issue_lyrix_auth_token(update: Update, ctx: CallbackContext) -> None:
+    if "group" in update.message.chat.type:
+        update.message.reply_text(f"Please direct-message me to get your lyrix auth token")
+        return 
+
+    hour = datetime.utcnow().hour
+    sha = hashlib.sha256(f"{update.message.from_user.id}:{hour}:{lyrix_backend_token}".encode('utf-8')).hexdigest()
+
+    update.message.reply_text(f"Your auth token is\n\n<code>{update.message.from_user.id}:{sha}</code>\n\nThis token is valid for an hour only. "
+                              f"You will have to regenerate this token if you do not use this now.",
+                              parse_mode="html")
 
 
 def echo(update: Update, ctx: CallbackContext) -> None:
@@ -225,6 +239,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("clearplaylist", clear_playlist))
     dispatcher.add_handler(CommandHandler("shareplaylist", share_playlist))
     dispatcher.add_handler(CommandHandler("mytelegramid", show_telegram_id))
+    dispatcher.add_handler(CommandHandler("issueauthtoken", issue_lyrix_auth_token))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
