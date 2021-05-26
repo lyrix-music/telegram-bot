@@ -47,7 +47,7 @@ t_logger = make_logger("tg")
 def ping_command(update: Update, _: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues ping command")
-    dt = datetime.datetime.now()
+    dt = datetime.now()
     update.message.reply_text(
         f"pong! latency is {dt.date() - update.message.date.date()}"
     )
