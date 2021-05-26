@@ -70,7 +70,7 @@ def get_local_lyrics(update: Update, ctx: CallbackContext) -> None:
         return
     artist, song = data["artist"], data["song"]
     ctx.bot.send_message(update.message.chat_id, f"Getting lyrics for <b>{song}</b> by <b>{artist}</b>", parse_mode="html")
-
+    artist = artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
     lyrics = sl.get_lyrics(song, artist)
     if lyrics is None or not lyrics:
         t_logger.warn(f"Couldn't get the lyrics for {song} by {artist}")
