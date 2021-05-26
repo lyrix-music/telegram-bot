@@ -17,6 +17,7 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     CallbackContext,
+    commandhandler,
 )
 
 from dotenv import load_dotenv
@@ -129,6 +130,13 @@ def echo(update: Update, ctx: CallbackContext) -> None:
         elif args == "ping":
             ping_command(update, ctx)
             return
+        elif args == "local":
+            get_local_lyrics(update, ctx)
+    elif len(commands) == 3:
+        if "local" in commands and "share" in commands:
+            share_local_song(update, ctx)
+
+        
 
 
 def register(update: Update, _: CallbackContext) -> None:
