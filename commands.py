@@ -78,7 +78,7 @@ class CommandInterface:
 
         ctx.bot.send_message(update.message.chat_id, lyrics)
 
-    def share_local_song(self, update: Update, _: CallbackContext) -> None:
+    def share_local_song(self, update: Update, ctx: CallbackContext) -> None:
         """Share the information of the current listening song from local music player"""
         self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id})"
                          f" issues local share song command")
@@ -93,8 +93,9 @@ class CommandInterface:
                                       f"is not playing any local song")
             return
 
-        update.message.reply_text(f"{update.message.from_user.first_name} "
-                                  f"is now playing {song.track} by {song.artist}")
+        ctx.bot.send_message(update.message.chat_id,
+                             f"{update.message.from_user.first_name} "
+                             f"is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b>", parse_mode="html")
 
     @staticmethod
     def show_telegram_id(update: Update, _: CallbackContext) -> None:
@@ -203,7 +204,6 @@ class CommandInterface:
                          f"has registered with lyrix")
         update.message.reply_text(AUTHORIZED_MESSAGE)
         """
-
 
     def add_to_playlist(self, update: Update, ctx: CallbackContext) -> None:
         if update.message.reply_to_message is None:

@@ -97,10 +97,11 @@ def main() -> None:
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
     la = LyrixApp()
-    prefix = "$lbx"
+    prefix = os.getenv("LYRIX_PREFIX") or "$lx"
+    suffix = os.getenv("LYRIX_SUFFIX") or ""
+
     ci = CommandInterface(la, prefix=prefix)
 
-    suffix = "beta"
     commands = [
         [("ping", ci.ping_command), "Ping the bot to see its alive"],
         [("register", register), "Register with Lyrix bot"],
