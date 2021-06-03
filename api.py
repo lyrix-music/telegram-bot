@@ -5,7 +5,6 @@ from lyrix.bot.models.song import Song
 
 
 class Api:
-
     @staticmethod
     def _get(user, endpoint: str, auth: bool = False) -> Response:
         """
@@ -16,7 +15,7 @@ class Api:
         :rtype: dict
         """
 
-        headers = {'Content-Type': 'application/json}'}
+        headers = {"Content-Type": "application/json}"}
         if auth:
             headers["Authorization"] = f"Bearer {user.token}"
         req = requests.get(f"https://{user.homeserver}{endpoint}", headers=headers)
@@ -32,12 +31,12 @@ class Api:
         :rtype: dict
         """
 
-        headers = {'Content-Type': 'application/json}'}
+        headers = {"Content-Type": "application/json}"}
         if auth:
             headers["Authorization"] = f"Bearer {user.token}"
-        req = requests.post(f"https://{user.homeserver}{endpoint}",
-                            headers=headers,
-                            data=data)
+        req = requests.post(
+            f"https://{user.homeserver}{endpoint}", headers=headers, data=data
+        )
         return req
 
     @staticmethod
@@ -45,8 +44,7 @@ class Api:
         """
         GET /user/player/local/current_song
         """
-        data = Api._get(user, "/user/player/local/current_song",
-                        auth=True).json()
+        data = Api._get(user, "/user/player/local/current_song", auth=True).json()
         return Song.from_json(data)
 
     @staticmethod
@@ -54,9 +52,12 @@ class Api:
         """
         POST /user/player/spotify/token
         """
-        data = Api._post(user, "/user/player/spotify/token",
-                         auth=True,
-                         data={"spotify_token": spotify_token})
+        data = Api._post(
+            user,
+            "/user/player/spotify/token",
+            auth=True,
+            data={"spotify_token": spotify_token},
+        )
         return 200 <= data.status_code <= 210
 
     @staticmethod
@@ -74,24 +75,33 @@ class Api:
         """
         POST /login
         """
-        headers = {'Content-Type': 'application/json}'}
+        headers = {"Content-Type": "application/json}"}
 
-        req = requests.post(f"https://{homeserver}/login",
-                            headers=headers,
-                            json={"username": username, "password": password})
+        req = requests.post(
+            f"https://{homeserver}/login",
+            headers=headers,
+            json={"username": username, "password": password},
+        )
 
         return req.json()["token"]
 
     @staticmethod
-    def register(username: str, password: str, homeserver: str, telegram_id: int) -> int:
+    def register(
+        username: str, password: str, homeserver: str, telegram_id: int
+    ) -> int:
         """
         POST /register
         """
-        headers = {'Content-Type': 'application/json}'}
+        headers = {"Content-Type": "application/json}"}
 
-        req = requests.post(f"https://{homeserver}/register",
-                            headers=headers,
-                            json={"username": username, "password": password, "telegram_id": telegram_id})
+        req = requests.post(
+            f"https://{homeserver}/register",
+            headers=headers,
+            json={
+                "username": username,
+                "password": password,
+                "telegram_id": telegram_id,
+            },
+        )
 
         return req.status_code
-

@@ -70,14 +70,18 @@ def _get_current_playing_song(
     spotify_auth_token = user.get_access_token()
     logger.info(f"Received spotify auth token: {spotify_auth_token}")
     sp = spotipy.Spotify(auth=spotify_auth_token)
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Authenticated with Spotify")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Authenticated with Spotify"
+    )
 
     logger.info("Getting currently playing track on spotify")
     track = sp.current_user_playing_track()
 
     if track is None or not track["is_playing"]:
-        logger.info(f"{message.from_user.first_name} is not playing anything on Spotify.")
+        logger.info(
+            f"{message.from_user.first_name} is not playing anything on Spotify."
+        )
         ctx.bot.send_message(
             message.chat_id, "Looks like you are not playing anything on Spotify."
         )
@@ -96,8 +100,10 @@ def _get_current_playing_song(
 
 
 def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"requested to share the currently playing song.")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"requested to share the currently playing song."
+    )
 
     currently_playing = _get_current_playing_song(la, message, ctx)
     if not currently_playing:
@@ -128,9 +134,7 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     except Exception:
         reply_markup = None
-        right_now = (
-            f"{first_name} is currently playing {escape(song_name)} by {artist_names_str}"
-        )
+        right_now = f"{first_name} is currently playing {escape(song_name)} by {artist_names_str}"
 
     ctx.bot.send_message(
         message.chat_id,
@@ -142,8 +146,10 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
 
 def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"requested for lyrics of the currently playing song.")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"requested for lyrics of the currently playing song."
+    )
 
     currently_playing = _get_current_playing_song(la, message, ctx)
     if not currently_playing:
@@ -154,13 +160,13 @@ def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     try:
         url = track["item"]["external_urls"]["spotify"]
-        right_now = f"Getting lyrics for <a href='{url}'>{song_name} by {artist_names_str}</a>"
+        right_now = (
+            f"Getting lyrics for <a href='{url}'>{song_name} by {artist_names_str}</a>"
+        )
     except Exception:
         right_now = f"Getting lyrics for {song_name} by {artist_names_str}"
 
-    ctx.bot.send_message(
-        message.chat_id, right_now, parse_mode=telegram.ParseMode.HTML
-    )
+    ctx.bot.send_message(message.chat_id, right_now, parse_mode=telegram.ParseMode.HTML)
 
     logger.debug(f"Trying to get the lyrics for {song_name} by {artist_names_str}")
     lyrics = get_lyrics(song_name, artist_names[0])
@@ -173,7 +179,9 @@ def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
     logger.info("Lyrics sent successfully.")
 
 
-def play_song_with_spotify(la: LyrixApp, message: Message, ctx: CallbackContext, song: str) -> None:
+def play_song_with_spotify(
+    la: LyrixApp, message: Message, ctx: CallbackContext, song: str
+) -> None:
     user = la.get_spotify_user_from_telegram_user(message.from_user.id)
 
     if user is None:
@@ -184,33 +192,50 @@ def play_song_with_spotify(la: LyrixApp, message: Message, ctx: CallbackContext,
         return
 
     sp = spotipy.Spotify(auth=user.get_access_token())
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Authenticated with Spotify")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Authenticated with Spotify"
+    )
 
     if user.playlist_id is None:
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Attempting to create playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Attempting to create playlist"
+        )
         playlist = sp.user_playlist_create(
-            sp.me()["id"], "lyrix 🎧", public=False, collaborative=False,
-            description="Lyrix song queue"
+            sp.me()["id"],
+            "lyrix 🎧",
+            public=False,
+            collaborative=False,
+            description="Lyrix song queue",
         )
         user.set_user_playlist_queue(playlist["id"])
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Readding the user with the new playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Readding the user with the new playlist"
+        )
         la.add_user(user)
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Playlist creation successful. Created with id {user.playlist_id}")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Playlist creation successful. Created with id {user.playlist_id}"
+        )
 
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Attempting to add to playlist {song}")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Attempting to add to playlist {song}"
+    )
     sp.playlist_add_items(user.playlist_id, [song])
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Added {song} to playlist {user.playlist_id}")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Added {song} to playlist {user.playlist_id}"
+    )
 
     message.reply_text("Added to queue 👌")
 
 
-def clear_playlist_from_spotify(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
+def clear_playlist_from_spotify(
+    la: LyrixApp, message: Message, ctx: CallbackContext
+) -> None:
     user = la.get_spotify_user_from_telegram_user(message.from_user.id)
 
     if user is None:
@@ -221,33 +246,50 @@ def clear_playlist_from_spotify(la: LyrixApp, message: Message, ctx: CallbackCon
         return
 
     sp = spotipy.Spotify(auth=user.get_access_token())
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Authenticated with Spotify")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Authenticated with Spotify"
+    )
 
     if user.playlist_id is None:
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Attempting to create playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Attempting to create playlist"
+        )
         playlist = sp.user_playlist_create(
-            sp.me()["id"], "lyrix 🎧", public=False, collaborative=False,
-            description="Lyrix song queue"
+            sp.me()["id"],
+            "lyrix 🎧",
+            public=False,
+            collaborative=False,
+            description="Lyrix song queue",
         )
         user.set_user_playlist_queue(playlist["id"])
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Readding the user with the new playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Readding the user with the new playlist"
+        )
         la.add_user(user)
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Playlist creation successful. Created with id {user.playlist_id}")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Playlist creation successful. Created with id {user.playlist_id}"
+        )
 
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Attempting to clear playlist {user.playlist_id}")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Attempting to clear playlist {user.playlist_id}"
+    )
     sp.playlist_replace_items(user.playlist_id, [])
-    logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                f"Cleared playlist {user.playlist_id}")
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"Cleared playlist {user.playlist_id}"
+    )
 
     message.reply_text("Cleared queue 🗑")
 
 
-def share_playlist_from_spotify(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
+def share_playlist_from_spotify(
+    la: LyrixApp, message: Message, ctx: CallbackContext
+) -> None:
     user = la.get_spotify_user_from_telegram_user(message.from_user.id)
 
     if user is None:
@@ -259,20 +301,33 @@ def share_playlist_from_spotify(la: LyrixApp, message: Message, ctx: CallbackCon
 
     if user.playlist_id is None:
         sp = spotipy.Spotify(auth=user.get_access_token())
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Authenticated with Spotify")
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Attempting to create playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Authenticated with Spotify"
+        )
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Attempting to create playlist"
+        )
         playlist = sp.user_playlist_create(
-            sp.me()["id"], "lyrix 🎧", public=False, collaborative=False,
-            description="Lyrix song queue"
+            sp.me()["id"],
+            "lyrix 🎧",
+            public=False,
+            collaborative=False,
+            description="Lyrix song queue",
         )
         user.set_user_playlist_queue(playlist["id"])
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Readding the user with the new playlist")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Readding the user with the new playlist"
+        )
         la.add_user(user)
-        logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
-                    f"Playlist creation successful. Created with id {user.playlist_id}")
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Playlist creation successful. Created with id {user.playlist_id}"
+        )
 
-    message.reply_text(f"{message.from_user.first_name}'s playlist: "
-                       f"https://open.spotify.com/playlist/{user.playlist_id}")
+    message.reply_text(
+        f"{message.from_user.first_name}'s playlist: "
+        f"https://open.spotify.com/playlist/{user.playlist_id}"
+    )

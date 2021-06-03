@@ -32,7 +32,9 @@ class LyrixApp:
                 return
         self.db["users"].append(user.parse_to_dict())
 
-    def get_spotify_user_from_telegram_user(self, telegram_id: int) -> Optional[LyrixUser]:
+    def get_spotify_user_from_telegram_user(
+        self, telegram_id: int
+    ) -> Optional[LyrixUser]:
         for user in self.db["users"]:
             if user.get("telegram_user_id") == telegram_id:
                 return LyrixUser.from_dict(user)
@@ -43,4 +45,3 @@ class LyrixApp:
             if user.get("telegram_user_id") == telegram_id:
                 return LyrixUser.from_dict(user)
         return None
-

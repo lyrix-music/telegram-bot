@@ -13,10 +13,22 @@ from telegram.ext import (
 )
 import swaglyrics.cli as sl
 
-from lyrix.bot.constants import NO_LYRICS_ERROR, WELCOME_MESSAGE, AUTHORIZED_MESSAGE, NOT_A_VALID_SONG_ERROR_MESSAGE, \
-    REGISTER_INTRO_MESSAGE, SCOPES, LOGIN_INTRO_MESSAGE
-from lyrix.bot.fetch import share_song_for_user, get_lyrics_for_user, clear_playlist_from_spotify, \
-    share_playlist_from_spotify, play_song_with_spotify
+from lyrix.bot.constants import (
+    NO_LYRICS_ERROR,
+    WELCOME_MESSAGE,
+    AUTHORIZED_MESSAGE,
+    NOT_A_VALID_SONG_ERROR_MESSAGE,
+    REGISTER_INTRO_MESSAGE,
+    SCOPES,
+    LOGIN_INTRO_MESSAGE,
+)
+from lyrix.bot.fetch import (
+    share_song_for_user,
+    get_lyrics_for_user,
+    clear_playlist_from_spotify,
+    share_playlist_from_spotify,
+    play_song_with_spotify,
+)
 from lyrix.bot.logging import make_logger
 from lyrix.bot.models.user import LyrixUser
 
@@ -36,10 +48,11 @@ class CommandInterface:
         self.la.load()
         self.command_prefix = prefix
 
-
     def ping_command(self, update: Update, _: CallbackContext) -> None:
         """Send a message when the command /ping is issued."""
-        self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues ping command")
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues ping command"
+        )
         dt = datetime.now()
         update.message.reply_text(
             f"pong! latency is {dt.date() - update.message.date.date()}"
@@ -50,7 +63,10 @@ class CommandInterface:
         Checks if a string command is actually a valid command
         """
 
-        if message.strip().startswith(f"{self.command_prefix} ") or message == f"{self.command_prefix}":
+        if (
+            message.strip().startswith(f"{self.command_prefix} ")
+            or message == f"{self.command_prefix}"
+        ):
             return True
         return False
 
@@ -65,13 +81,18 @@ class CommandInterface:
     def get_local_lyrics(self, update: Update, ctx: CallbackContext) -> None:
         self.logger.info(
             f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-            f"issues local lyrics song command")
+            f"issues local lyrics song command"
+        )
 
-        song = Api.get_current_local_listening_song(user=self.la.get_user(telegram_id=update.message.from_user.id))
+        song = Api.get_current_local_listening_song(
+            user=self.la.get_user(telegram_id=update.message.from_user.id)
+        )
 
-        ctx.bot.send_message(update.message.chat_id,
-                             f"Getting lyrics for <b>{song.track}</b> by <b>{song.artist}</b>",
-                             parse_mode="html")
+        ctx.bot.send_message(
+            update.message.chat_id,
+            f"Getting lyrics for <b>{song.track}</b> by <b>{song.artist}</b>",
+            parse_mode="html",
+        )
 
         artist = song.artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
         lyrics = sl.get_lyrics(song.track, artist)
@@ -85,8 +106,10 @@ class CommandInterface:
 
     def share_local_song(self, update: Update, ctx: CallbackContext) -> None:
         """Share the information of the current listening song from local music player"""
-        self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id})"
-                         f" issues local share song command")
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id})"
+            f" issues local share song command"
+        )
         user = self.la.get_user(update.message.from_user.id)
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
@@ -94,13 +117,18 @@ class CommandInterface:
         song = Api.get_current_local_listening_song(user)
 
         if not song.track or not song.artist:
-            update.message.reply_text(f"{update.message.from_user.first_name} "
-                                      f"is not playing any local song")
+            update.message.reply_text(
+                f"{update.message.from_user.first_name} "
+                f"is not playing any local song"
+            )
             return
 
-        ctx.bot.send_message(update.message.chat_id,
-                             f"{update.message.from_user.first_name} "
-                             f"is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b>", parse_mode="html")
+        ctx.bot.send_message(
+            update.message.chat_id,
+            f"{update.message.from_user.first_name} "
+            f"is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b>",
+            parse_mode="html",
+        )
 
     @staticmethod
     def show_telegram_id(update: Update, _: CallbackContext) -> None:
@@ -144,8 +172,7 @@ class CommandInterface:
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
             return
-        is_success = Api.send_spotify_token(user=user,
-                                            spotify_token=spotify_token)
+        is_success = Api.send_spotify_token(user=user, spotify_token=spotify_token)
         update.message.reply_text(f"Spotify token updated?: {is_success}")
 
     def who_am_i(self, update: Update, _: CallbackContext) -> None:
@@ -153,17 +180,22 @@ class CommandInterface:
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
             return
-        update.message.reply_text(f"<b>User:</b> {user.username}\n"
-                                  f"<b>Homeserver:</b> {user.homeserver}\n"
-                                  f"<b>Telegram Id:</b> {user.telegram_user_id}</b>", parse_mode="html")
+        update.message.reply_text(
+            f"<b>User:</b> {user.username}\n"
+            f"<b>Homeserver:</b> {user.homeserver}\n"
+            f"<b>Telegram Id:</b> {user.telegram_user_id}</b>",
+            parse_mode="html",
+        )
 
     def start(self, update: Update, ctx: CallbackContext) -> None:
         text_message = update.message.text.split(" ")
         print(text_message)
         code = text_message[-1]
         if len(text_message) == 1:
-            self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-                             f"issues /start command without args")
+            self.logger.info(
+                f"{update.message.from_user.first_name}({update.message.from_user.id}) "
+                f"issues /start command without args"
+            )
             # the user doesnt know yet.. lets give a demo
             ctx.bot.send_message(
                 update.message.chat_id,
@@ -171,21 +203,30 @@ class CommandInterface:
             )
             return
 
-        self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-                         f"issues /start command with params")
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) "
+            f"issues /start command with params"
+        )
 
         username, hs, token = code.split(":")
         if not token:
-            update.message.reply_text("Login credentials seem to be wrong. "
-                                      "Are you sure your username and password is correct?")
+            update.message.reply_text(
+                "Login credentials seem to be wrong. "
+                "Are you sure your username and password is correct?"
+            )
             return
         self.la.add_user(
-            LyrixUser(telegram_user_id=update.message.from_user.id,
-                      username=username, homeserver=hs,
-                      token=token)
+            LyrixUser(
+                telegram_user_id=update.message.from_user.id,
+                username=username,
+                homeserver=hs,
+                token=token,
+            )
         )
-        self.logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-                         f"has registered with lyrix")
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) "
+            f"has registered with lyrix"
+        )
         update.message.reply_text(AUTHORIZED_MESSAGE)
         """
         try:
@@ -212,7 +253,9 @@ class CommandInterface:
 
     def add_to_playlist(self, update: Update, ctx: CallbackContext) -> None:
         if update.message.reply_to_message is None:
-            update.message.reply_text("Reply to a song with /playthis command, or /playthis followed by spotify URL")
+            update.message.reply_text(
+                "Reply to a song with /playthis command, or /playthis followed by spotify URL"
+            )
             return
         spotify_song = update.message.reply_to_message.text
         print(spotify_song)
@@ -230,7 +273,8 @@ class CommandInterface:
             update.message.reply_text("This command can only be used in private chats")
             return
         self.logger.info(
-            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues register command")
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues register command"
+        )
 
         update.message.reply_text(
             REGISTER_INTRO_MESSAGE,
@@ -246,11 +290,11 @@ class CommandInterface:
             ),
         )
 
-
     def login(self, update: Update, _: CallbackContext) -> None:
         """Gets the token of a user"""
         self.logger.info(
-            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues login command")
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues login command"
+        )
 
         update.message.reply_text(
             LOGIN_INTRO_MESSAGE,

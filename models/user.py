@@ -12,7 +12,7 @@ class LyrixUser:
         telegram_user_id: int = None,
         username: str = None,
         homeserver: str = None,
-        token: str = None
+        token: str = None,
     ):
         self.telegram_user_id = telegram_user_id
         self.username = username
@@ -33,7 +33,7 @@ class LyrixUser:
             telegram_user_id=data.get("telegram_user_id"),
             username=data.get("username"),
             homeserver=data.get("homeserver"),
-            token=data.get("token")
+            token=data.get("token"),
         )
 
     def get_access_token(self) -> str:
@@ -48,6 +48,7 @@ class LyrixUser:
 
         token = spo.get_access_token(spotify_auth_token)
         return token.get("access_token")
+
 
 class User:
     def __init__(
@@ -68,7 +69,7 @@ class User:
             telegram_user_id=data.get("tg_id"),
             spotify_email_id=data.get("spot_id"),
             spotify_auth_token=data.get("spot_auth_token"),
-            playlist_id=data.get("playlist_id")
+            playlist_id=data.get("playlist_id"),
         )
 
     def parse_to_dict(self):
@@ -76,7 +77,7 @@ class User:
             "tg_id": self.telegram_user_id,
             "spot_id": self.spotify_email_id,
             "spot_auth_token": self.spotify_auth_token,
-            "playlist_id": self.playlist_id
+            "playlist_id": self.playlist_id,
         }
 
     def get_access_token(self) -> str:
