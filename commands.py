@@ -324,8 +324,7 @@ class CommandInterface:
             ),
         )
         update.message.reply_text(
-            "Click the button below to connect your spotify account to "
-            "Lyrix.",
+            "Click the button below to connect your spotify account to " "Lyrix.",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -339,4 +338,3 @@ class CommandInterface:
                 ]
             ),
         )
-
