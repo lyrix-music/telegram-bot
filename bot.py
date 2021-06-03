@@ -1,7 +1,9 @@
+
 import datetime
 import os
 import re
 import hashlib
+from typing import Tuple
 
 import requests
 import swaglyrics.cli as sl
@@ -23,11 +25,14 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 from lyrix.bot.app import LyrixApp
+from lyrix.bot.commands import CommandInterface
 from lyrix.bot.constants import SCOPES
 from lyrix.bot.fetch import get_lyrics_for_user, share_song_for_user, play_song_with_spotify, \
     clear_playlist_from_spotify, share_playlist_from_spotify
-from lyrix.bot.models import User
+
 from lyrix.bot.logging import setup_logging, make_logger
+from lyrix.bot.constants import AUTHORIZED_MESSAGE, NOT_A_VALID_SONG_ERROR_MESSAGE, WELCOME_MESSAGE, \
+    REGISTER_INTRO_MESSAGE
 
 load_dotenv()
 
@@ -35,108 +40,14 @@ load_dotenv()
 client_id = os.environ["SPOTIPY_CLIENT_ID"]
 client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
 lyrix_backend = os.environ["LYRIX_BACKEND"]
-lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
+
 lyrix_backend_token = os.environ["LYRIX_BACKEND_TOKEN"]
 
 setup_logging()
-la = LyrixApp()
-la.load()
+
 
 t_logger = make_logger("tg")
 
-
-def ping_command(update: Update, _: CallbackContext) -> None:
-    """Send a message when the command /help is issued."""
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues ping command")
-    dt = datetime.now()
-    update.message.reply_text(
-        f"pong! latency is {dt.date() - update.message.date.date()}"
-    )
-
-
-def get_lyrics(update: Update, ctx: CallbackContext) -> None:
-    get_lyrics_for_user(la, update.message, ctx)
-
-
-def share_song(update: Update, ctx: CallbackContext) -> None:
-    share_song_for_user(la, update.message, ctx)
-
-
-def get_local_lyrics(update: Update, ctx: CallbackContext) -> None:
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues local lyrics song command")
-    req = requests.get(f"{lyrix_backend}/api/currentsong/{update.message.from_user.id}")
-    data = req.json()
-    if not data:
-        update.message.reply_text(f"{update.message.from_user.first_name} is not playing any local song")
-        return
-    artist, song = data["artist"], data["song"]
-    ctx.bot.send_message(update.message.chat_id, f"Getting lyrics for <b>{song}</b> by <b>{artist}</b>", parse_mode="html")
-    artist = artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
-    lyrics = sl.get_lyrics(song, artist)
-    if lyrics is None or not lyrics:
-        t_logger.warn(f"Couldn't get the lyrics for {song} by {artist}")
-        ctx.bot.send_message(update.message.chat_id, "Couldn't find the lyrics. 😔😔😔")
-        return
-
-    ctx.bot.send_message(update.message.chat_id, lyrics)
-
-
-def share_local_song(update: Update, ctx: CallbackContext) -> None:
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues local share song command")
-    req = requests.get(f"{lyrix_backend}/api/currentsong/{update.message.from_user.id}")
-    data = req.json()
-    if not data:
-        update.message.reply_text(f"{update.message.from_user.first_name} is not playing any local song")
-        return
-    artist, song = data["artist"], data["song"]
-    update.message.reply_text(f"{update.message.from_user.first_name} is now playing {song} by {artist}")
-
-def show_telegram_id(update: Update, ctx: CallbackContext) -> None:
-    update.message.reply_text(f"{update.message.from_user.id}")
-
-def issue_lyrix_auth_token(update: Update, ctx: CallbackContext) -> None:
-    if "group" in update.message.chat.type:
-        update.message.reply_text(f"Please direct-message me to get your lyrix auth token")
-        return 
-
-    hour = datetime.utcnow().hour
-    sha = hashlib.sha256(f"{update.message.from_user.id}:{hour}:{lyrix_backend_token}".encode('utf-8')).hexdigest()
-
-    update.message.reply_text(f"Your auth token is\n\n<code>{update.message.from_user.id}:{sha}</code>\n\nThis token is valid for an hour only. "
-                              f"You will have to regenerate this token if you do not use this now.",
-                              parse_mode="html")
-
-
-def echo(update: Update, ctx: CallbackContext) -> None:
-    """Echo the user message."""
-    try:
-        if (
-            not update.message.text.startswith("$lx")
-            and not update.message.text.startswith("$lyrix")
-            and not update.message.text.startswith("$xl")
-        ):
-            return
-    except AttributeError:
-        return
-    commands = update.message.text.strip().split(" ")
-    if len(commands) == 1:
-        get_lyrics_for_user(la, update.message, ctx)
-        return
-    if len(commands) == 2:
-        args = commands[-1].strip()
-        if args == "share":
-            share_song_for_user(la, update.message, ctx)
-            return
-        elif args == "ping":
-            ping_command(update, ctx)
-            return
-        elif args == "local":
-            get_local_lyrics(update, ctx)
-    elif len(commands) == 3:
-        if "local" in commands and "share" in commands:
-            share_local_song(update, ctx)
-
-        
 
 
 def register(update: Update, _: CallbackContext) -> None:
@@ -149,9 +60,7 @@ def register(update: Update, _: CallbackContext) -> None:
         ),
     )
     update.message.reply_text(
-        "Click the button below to connect your spotify account to "
-        "Lyrix. Do not paste the callback code in group chats. Paste the code "
-        "in a private message with @lyrixxxbot only.",
+        REGISTER_INTRO_MESSAGE,
         reply_markup=InlineKeyboardMarkup(
             [
                 [
@@ -167,63 +76,9 @@ def register(update: Update, _: CallbackContext) -> None:
     )
 
 
-def login(update: Update, ctx: CallbackContext) -> None:
-    text_message = update.message.text.split(" ")
-    print(text_message)
-    code = text_message[-1]
-    if len(text_message) == 1:
-        t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-                      f"issues /start command without args")
-        # the user doesnt know yet.. lets give a demo
-        ctx.bot.send_message(
-            update.message.chat_id,
-            """Welcome to lyrix bot 🎵
-        
-To connect your Spotify account to Lyrix Bot, you will need to register.
-Registration is possible using the /register command. Clicking the button 
-will take you to a webpage and ask you to authorize lyrix bot with spotify.
-
-This is necessary to help me receive your current playing song. 
-
-Once Spotify authorization is completed, copy the telegram command code from the webpage
-and paste it directly here 😌🤷.
-
-Do not paste the auth code in telegram groups.""",
-        )
-        return
-
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) "
-                  f"issues /start command with params")
-    la.add_user(
-        User(telegram_user_id=update.message.from_user.id, spotify_auth_token=code)
-    )
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) has registered with lyrix")
-    update.message.reply_text("✅ You are now authorized!")
 
 
-def add_to_playlist(update: Update, ctx: CallbackContext) -> None:
-    if update.message.reply_to_message is None:
-        update.message.reply_text("Reply to a song with /playthis command, or /playthis followed by spotify URL")
-        return
-    spotify_song = update.message.reply_to_message.text
-    print(spotify_song)
-    match = lyrix_id_match.findall(spotify_song)
-    if len(match) != 1:
-        update.message.reply_text("Not a valid song from lyrix. Can't play this.")
-        return
-    song_uri = match[0]
-
-    play_song_with_spotify(la, update.message, ctx, song_uri)
-
-
-def clear_playlist(update: Update, ctx: CallbackContext) -> None:
-    clear_playlist_from_spotify(la, update.message, ctx)
-
-def share_playlist(update: Update, ctx: CallbackContext) -> None:
-    share_playlist_from_spotify(la, update.message, ctx)
-
-
-def send_commands(update: Update, ctx: CallbackContext, commands: list) -> None:
+def send_commands(update: Update, _: CallbackContext, commands: list) -> None:
     text_message = "<b>Lyrix Help</b>\n"
     for command, help in commands:
         text_message += f"- /{command[0]} - {help}\n"
@@ -241,28 +96,36 @@ def main() -> None:
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
+    la = LyrixApp()
+    prefix = "$lbx"
+    ci = CommandInterface(la, prefix=prefix)
 
-
+    suffix = "beta"
     commands = [
-        [("ping", ping_command), "Ping the bot to see its alive"],
+        [("ping", ci.ping_command), "Ping the bot to see its alive"],
         [("register", register), "Register with Lyrix bot"],
-        [("start", login), "Start the bot and get the initial registration instructions"],
-        [("lyrix", get_lyrics), "Get the lyrics of the current listening song on spotify."],
-        [("locallyrix", get_local_lyrics), "Get the local lyrix from lyrixd app from your desktop or mobile music player"],
-        [("sharesong", share_song), "Share your current listening song with your friends"],
-        [("sharelocalsong", share_local_song), "Share the song you are listening using lyrixd app from your desktop or mobile music player."],
-        [("addtoplaylist", add_to_playlist), "Adds the song to your spotify playlist"],
-        [("clearplaylist", clear_playlist), "Clear the lyrix spotify playlist"],
-        [("issueauthtoken", issue_lyrix_auth_token), "Create a lyrix authorization token"],
+        [("whoami", ci.who_am_i), "Who am I? Get the login details"],
+        [("start", ci.login), "Start the bot and get the initial registration instructions"],
+        [("lyrix", ci.get_lyrics), "Get the lyrics of the current listening song on spotify."],
+        [("locallyrix", ci.get_local_lyrics), "Get the local lyrix from lyrixd app from your "
+                                              "desktop or mobile music player"],
+        [("sharesong", ci.share_song), "Share your current listening song with your friends"],
+        [("sharelocalsong", ci.share_local_song), "Share the song you are listening using lyrixd "
+                                                  "app from your desktop or mobile music player."],
+        [("addtoplaylist", ci.add_to_playlist), "Adds the song to your spotify playlist"],
+        [("clearplaylist", ci.clear_playlist), "Clear the lyrix spotify playlist"],
+
         
     ]
     # on different commands - answer in Telegram
     for command, _ in commands:
-        dispatcher.add_handler(CommandHandler(*command))
+        command_text, command_func = command
+        command_text = command_text + suffix
+        dispatcher.add_handler(CommandHandler(command_text, command_func))
     dispatcher.add_handler(CommandHandler("help", lambda update, ctx: send_commands(update, ctx, commands)))
 
-    # on non command i.e message - echo the message on Telegram
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    # on non command i.e message - general_command the message on Telegram
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, ci.general_command))
 
     logger.info("Bot is up, and is ready to receive commands.")
 

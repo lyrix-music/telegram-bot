@@ -2,8 +2,52 @@ import os.path
 
 from spotipy import SpotifyOAuth, CacheFileHandler
 
+from lyrix.bot.api import Api
 from lyrix.bot.constants import SCOPES
 
+
+class LyrixUser:
+    def __init__(
+        self,
+        telegram_user_id: int = None,
+        username: str = None,
+        homeserver: str = None,
+        token: str = None
+    ):
+        self.telegram_user_id = telegram_user_id
+        self.username = username
+        self.homeserver = homeserver
+        self.token = token
+
+    def parse_to_dict(self):
+        return {
+            "telegram_user_id": self.telegram_user_id,
+            "username": self.username,
+            "homeserver": self.homeserver,
+            "token": self.token,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return LyrixUser(
+            telegram_user_id=data.get("telegram_user_id"),
+            username=data.get("username"),
+            homeserver=data.get("homeserver"),
+            token=data.get("token")
+        )
+
+    def get_access_token(self) -> str:
+        handler = CacheFileHandler(
+            cache_path=os.path.join(
+                os.getcwd(), ".cache", f"cache-{self.telegram_user_id}"
+            ),
+            username=str(self.telegram_user_id),
+        )
+        spo = SpotifyOAuth(cache_handler=handler, scope=SCOPES)
+        spotify_auth_token = Api.get_spotify_token(self)
+
+        token = spo.get_access_token(spotify_auth_token)
+        return token.get("access_token")
 
 class User:
     def __init__(
