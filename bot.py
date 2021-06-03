@@ -85,8 +85,9 @@ def main() -> None:
 
     commands = [
         [("ping", ci.ping_command), "Ping the bot to see its alive"],
-        [("updatespotifytoken", ci.update_spotify_token), "Update your spotify token"],
-        [("whoami", ci.who_am_i), "Who am I? Get the login details"],
+        [("connect_spotify", ci.connect_spotify), "Connect spotify to lyrix."],
+        [("update_spotify_token", ci.update_spotify_token), "Update your spotify token (advanced users only)"],
+        [("who_am_i", ci.who_am_i), "Who am I? Get the login details"],
         [("login", ci.login), "Create an authorization token to send to me"],
         [("register", ci.register), "Instruction to create a lyrix account."],
         [

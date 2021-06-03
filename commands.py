@@ -167,11 +167,16 @@ class CommandInterface:
 
     def update_spotify_token(self, update: Update, _: CallbackContext) -> None:
         token_parts = update.message.text.split()
+        if len(token_parts) != 2:
+            update.message.reply_text("Usage: <command> <token>")
+            return
         spotify_token = token_parts[-1]
         user = self.la.get_user(update.message.from_user.id)
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
             return
+        if spotify_token:
+            pass
         is_success = Api.send_spotify_token(user=user, spotify_token=spotify_token)
         update.message.reply_text(f"Spotify token updated?: {is_success}")
 
@@ -183,7 +188,7 @@ class CommandInterface:
         update.message.reply_text(
             f"<b>User:</b> {user.username}\n"
             f"<b>Homeserver:</b> {user.homeserver}\n"
-            f"<b>Telegram Id:</b> {user.telegram_user_id}</b>",
+            f"<b>Telegram Id:</b> {user.telegram_user_id}",
             parse_mode="html",
         )
 
@@ -309,3 +314,29 @@ class CommandInterface:
                 ]
             ),
         )
+
+    def connect_spotify(self, update: Update, _: CallbackContext) -> None:
+        """Gets the token of a user"""
+        handler = CacheFileHandler(
+            username=str(update.message.from_user.id),
+            cache_path=os.path.join(
+                os.getcwd(), ".cache", f"cache-{update.message.from_user.id}"
+            ),
+        )
+        update.message.reply_text(
+            "Click the button below to connect your spotify account to "
+            "Lyrix.",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Authorize Spotify",
+                            url=SpotifyOAuth(
+                                cache_handler=handler, scope=SCOPES
+                            ).get_authorize_url(),
+                        )
+                    ],
+                ]
+            ),
+        )
+

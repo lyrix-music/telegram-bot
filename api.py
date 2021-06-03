@@ -35,7 +35,7 @@ class Api:
         if auth:
             headers["Authorization"] = f"Bearer {user.token}"
         req = requests.post(
-            f"https://{user.homeserver}{endpoint}", headers=headers, data=data
+            f"https://{user.homeserver}{endpoint}", headers=headers, json=data
         )
         return req
 
