@@ -12,7 +12,7 @@ import swaglyrics.cli as sl
 
 from lyrix.bot.constants import NO_LYRICS_ERROR, WELCOME_MESSAGE, AUTHORIZED_MESSAGE, NOT_A_VALID_SONG_ERROR_MESSAGE
 from lyrix.bot.fetch import share_song_for_user, get_lyrics_for_user, clear_playlist_from_spotify, \
-    share_playlist_from_spotify
+    share_playlist_from_spotify, play_song_with_spotify
 from lyrix.bot.logging import make_logger
 from lyrix.bot.models.user import LyrixUser
 
@@ -217,4 +217,4 @@ class CommandInterface:
             return
         song_uri = match[0]
 
-        play_song_with_spotify(la, update.message, ctx, song_uri)
+        play_song_with_spotify(self.la, update.message, ctx, song_uri)
