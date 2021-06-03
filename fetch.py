@@ -67,7 +67,9 @@ def _get_current_playing_song(
         )
         return
 
-    sp = spotipy.Spotify(auth=user.get_access_token())
+    spotify_auth_token = user.get_access_token()
+    logger.info(f"Received spotify auth token: {spotify_auth_token}")
+    sp = spotipy.Spotify(auth=spotify_auth_token)
     logger.info(f"{message.from_user.first_name}({message.from_user.id}) "
                 f"Authenticated with Spotify")
 

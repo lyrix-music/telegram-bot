@@ -50,38 +50,13 @@ t_logger = make_logger("tg")
 
 
 
-def register(update: Update, _: CallbackContext) -> None:
-    """Register a user"""
-    t_logger.info(f"{update.message.from_user.first_name}({update.message.from_user.id}) issues register command")
-    handler = CacheFileHandler(
-        username=str(update.message.from_user.id),
-        cache_path=os.path.join(
-            os.getcwd(), ".cache", f"cache-{update.message.from_user.id}"
-        ),
-    )
-    update.message.reply_text(
-        REGISTER_INTRO_MESSAGE,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text="Register",
-                        url=SpotifyOAuth(
-                            cache_handler=handler, scope=SCOPES
-                        ).get_authorize_url(),
-                    )
-                ],
-            ]
-        ),
-    )
 
 
 
-
-def send_commands(update: Update, _: CallbackContext, commands: list) -> None:
+def send_commands(update: Update, _: CallbackContext, commands: list, suffix: str) -> None:
     text_message = "<b>Lyrix Help</b>\n"
     for command, help in commands:
-        text_message += f"- /{command[0]} - {help}\n"
+        text_message += f"- /{command[0]}{suffix} - {help}\n"
     update.message.reply_text(text_message, parse_mode="html")
 
 
@@ -104,9 +79,11 @@ def main() -> None:
 
     commands = [
         [("ping", ci.ping_command), "Ping the bot to see its alive"],
-        [("register", register), "Register with Lyrix bot"],
+        [("updatespotifytoken", ci.update_spotify_token), "Update your spotify token"],
         [("whoami", ci.who_am_i), "Who am I? Get the login details"],
-        [("start", ci.login), "Start the bot and get the initial registration instructions"],
+        [("login", ci.start), "Create an authorization token to send to me"],
+        [("register", ci.start), "Instruction to create a lyrix account."],
+        [("start", ci.start), "Start the bot and get the initial registration instructions"],
         [("lyrix", ci.get_lyrics), "Get the lyrics of the current listening song on spotify."],
         [("locallyrix", ci.get_local_lyrics), "Get the local lyrix from lyrixd app from your "
                                               "desktop or mobile music player"],
@@ -123,7 +100,8 @@ def main() -> None:
         command_text, command_func = command
         command_text = command_text + suffix
         dispatcher.add_handler(CommandHandler(command_text, command_func))
-    dispatcher.add_handler(CommandHandler("help", lambda update, ctx: send_commands(update, ctx, commands)))
+    dispatcher.add_handler(CommandHandler(f"help{suffix}",
+                                          lambda update, ctx: send_commands(update, ctx, commands, suffix)))
 
     # on non command i.e message - general_command the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, ci.general_command))

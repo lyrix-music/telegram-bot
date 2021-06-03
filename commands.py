@@ -1,16 +1,20 @@
+import os
 import re
 from datetime import datetime
 from typing import Tuple
 
+from spotipy import CacheFileHandler, SpotifyOAuth
+
 from lyrix.bot.api import Api
 from lyrix.bot.app import LyrixApp
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Chat
 from telegram.ext import (
     CallbackContext,
 )
 import swaglyrics.cli as sl
 
-from lyrix.bot.constants import NO_LYRICS_ERROR, WELCOME_MESSAGE, AUTHORIZED_MESSAGE, NOT_A_VALID_SONG_ERROR_MESSAGE
+from lyrix.bot.constants import NO_LYRICS_ERROR, WELCOME_MESSAGE, AUTHORIZED_MESSAGE, NOT_A_VALID_SONG_ERROR_MESSAGE, \
+    REGISTER_INTRO_MESSAGE, SCOPES, LOGIN_INTRO_MESSAGE
 from lyrix.bot.fetch import share_song_for_user, get_lyrics_for_user, clear_playlist_from_spotify, \
     share_playlist_from_spotify, play_song_with_spotify
 from lyrix.bot.logging import make_logger
@@ -31,6 +35,7 @@ class CommandInterface:
         self.la = la
         self.la.load()
         self.command_prefix = prefix
+
 
     def ping_command(self, update: Update, _: CallbackContext) -> None:
         """Send a message when the command /ping is issued."""
@@ -152,7 +157,7 @@ class CommandInterface:
                                   f"<b>Homeserver:</b> {user.homeserver}\n"
                                   f"<b>Telegram Id:</b> {user.telegram_user_id}</b>", parse_mode="html")
 
-    def login(self, update: Update, ctx: CallbackContext) -> None:
+    def start(self, update: Update, ctx: CallbackContext) -> None:
         text_message = update.message.text.split(" ")
         print(text_message)
         code = text_message[-1]
@@ -218,3 +223,45 @@ class CommandInterface:
         song_uri = match[0]
 
         play_song_with_spotify(self.la, update.message, ctx, song_uri)
+
+    def register(self, update: Update, _: CallbackContext) -> None:
+        """Register a user"""
+        if update.message.chat.type != Chat.PRIVATE:
+            update.message.reply_text("This command can only be used in private chats")
+            return
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues register command")
+
+        update.message.reply_text(
+            REGISTER_INTRO_MESSAGE,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Register",
+                            url=f"https://lyrix.srev.in/register?id={update.message.from_user.id}",
+                        )
+                    ],
+                ]
+            ),
+        )
+
+
+    def login(self, update: Update, _: CallbackContext) -> None:
+        """Gets the token of a user"""
+        self.logger.info(
+            f"{update.message.from_user.first_name}({update.message.from_user.id}) issues login command")
+
+        update.message.reply_text(
+            LOGIN_INTRO_MESSAGE,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Login",
+                            url="https://lyrix.srev.in/login",
+                        )
+                    ],
+                ]
+            ),
+        )
