@@ -83,9 +83,12 @@ class CommandInterface:
             f"{update.message.from_user.first_name}({update.message.from_user.id}) "
             f"issues local lyrics song command"
         )
-
+        user = self.la.get_user(telegram_id=update.message.from_user.id)
+        if user is None:
+            update.message.reply_text("You haven't logged in yet 👀")
+            return
         song = Api.get_current_local_listening_song(
-            user=self.la.get_user(telegram_id=update.message.from_user.id)
+            user=user
         )
 
         ctx.bot.send_message(
@@ -189,6 +192,12 @@ class CommandInterface:
             f"<b>User:</b> {user.username}\n"
             f"<b>Homeserver:</b> {user.homeserver}\n"
             f"<b>Telegram Id:</b> {user.telegram_user_id}",
+            parse_mode="html",
+        )
+
+    def telegram_id(self, update: Update, _: CallbackContext) -> None:
+        update.message.reply_text(
+            f"<b>Telegram Id:</b> {update.message.from_user.id}",
             parse_mode="html",
         )
 

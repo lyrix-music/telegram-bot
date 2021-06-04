@@ -91,6 +91,7 @@ def main() -> None:
             "Update your spotify token (advanced users only)",
         ],
         [("who_am_i", ci.who_am_i), "Who am I? Get the login details"],
+        [("telegram_id", ci.telegram_id), "Get your telegram ID"],
         [("login", ci.login), "Create an authorization token to send to me"],
         [("register", ci.register), "Instruction to create a lyrix account."],
         [
