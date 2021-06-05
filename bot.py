@@ -84,48 +84,50 @@ def main() -> None:
     ci = CommandInterface(la, prefix=prefix)
 
     commands = [
-        [("ping", ci.ping_command), "Ping the bot to see its alive"],
-        [("connect_spotify", ci.connect_spotify), "Connect spotify to lyrix."],
+        [("ping", ci.ping_command), "👀 Ping the bot to see its alive"],
+        [("connect_spotify", ci.connect_spotify), "🎹 Connect spotify to lyrix."],
         [
             ("update_spotify_token", ci.update_spotify_token),
-            "Update your spotify token (advanced users only)",
+            "👩‍💻 Update your spotify token (advanced users only)",
         ],
-        [("who_am_i", ci.who_am_i), "Who am I? Get the login details"],
-        [("telegram_id", ci.telegram_id), "Get your telegram ID"],
-        [("login", ci.login), "Create an authorization token to send to me"],
-        [("register", ci.register), "Instruction to create a lyrix account."],
+        [("who_am_i", ci.who_am_i), " 🤔 Who am I? Get the login details "],
+        [("telegram_id", ci.telegram_id), "🆔 Get your telegram ID"],
+        [("login", ci.login), "🔐 Create an authorization token to send to me"],
+        [("register", ci.register), "🗒 Instruction to create a lyrix account."],
         [
             ("start", ci.start),
-            "Start the bot and get the initial registration instructions",
+            "💫 Start the bot and get the initial registration instructions",
         ],
         [
             ("lyrix", ci.get_lyrics),
-            "Get the lyrics of the current listening song on spotify.",
+            "📑 Get the lyrics of the current listening song on spotify.",
         ],
         [
             ("locallyrix", ci.get_local_lyrics),
-            "Get the local lyrix from lyrixd app from your "
+            "📱 Get the local lyrix from lyrixd app from your "
             "desktop or mobile music player",
         ],
         [
             ("sharesong", ci.share_song),
-            "Share your current listening song with your friends",
+            "🎉 Share your current listening song with your friends",
         ],
         [
             ("sharelocalsong", ci.share_local_song),
-            "Share the song you are listening using lyrixd "
-            "app from your desktop or mobile music player.",
+            "✨ Share the song you are listening using lyrixd "
+            "app from your desktop or mobile music player.✨",
         ],
         [
             ("addtoplaylist", ci.add_to_playlist),
-            "Adds the song to your spotify playlist",
+            "▶️ Adds the song to your spotify playlist",
         ],
-        [("clearplaylist", ci.clear_playlist), "Clear the lyrix spotify playlist"],
+        [("clearplaylist", ci.clear_playlist), "🗑 Clear the lyrix spotify playlist"],
     ]
     # on different commands - answer in Telegram
-    for command, _ in commands:
+    print("Available commands are:")
+    for command, help_message in commands:
         command_text, command_func = command
         command_text = command_text + suffix
+        print(f"{command_text} - {help_message}")
         dispatcher.add_handler(CommandHandler(command_text, command_func))
     dispatcher.add_handler(
         CommandHandler(
@@ -133,6 +135,7 @@ def main() -> None:
             lambda update, ctx: send_commands(update, ctx, commands, suffix),
         )
     )
+    
 
     # on non command i.e message - general_command the message on Telegram
     dispatcher.add_handler(

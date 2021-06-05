@@ -291,7 +291,8 @@ class CommandInterface:
         )
 
         update.message.reply_text(
-            REGISTER_INTRO_MESSAGE,
+            REGISTER_INTRO_MESSAGE + f" If you are asked for a telegram id, your id is <b>{update.message.from_user.id}</b> 😉.",
+            parse_mode="html",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
