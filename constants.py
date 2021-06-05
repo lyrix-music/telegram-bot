@@ -4,9 +4,7 @@ SCOPES = "user-read-email user-read-currently-playing playlist-modify-public pla
 
 WELCOME_MESSAGE = """Welcome to lyrix bot 🎵
         
-To login to your account:
-
-/start @beethoven@greatartists.org this_is_my_super_secret_password   
+To login to your account, use the /login command 
 
 Type /help for more information about other commands
 """
