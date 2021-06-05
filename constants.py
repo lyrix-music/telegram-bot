@@ -16,10 +16,10 @@ NOT_A_VALID_SONG_ERROR_MESSAGE = "Not a valid song from lyrix. Can't play this."
 NO_LYRICS_ERROR = "Couldn't find the lyrics. 😔😔😔"
 
 REGISTER_INTRO_MESSAGE = (
-    "You may either register with lyrix using the mobile app, or "
-    "use the button below to create an account with Lyrix. "
+    "You may either register with lyrix using the mobile app 📱, or "
+    "use the button ⏬ below to create an account with Lyrix. \n"
     "If you have already registered with lyrix, you might like to use /login command instead. "
-    "Do not share this link with anyone 😄."
+    "Do not share this link with anyone 😄.\n\n"
 )
 
 LOGIN_INTRO_MESSAGE = (
