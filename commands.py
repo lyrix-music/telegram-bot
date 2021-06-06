@@ -298,7 +298,7 @@ class CommandInterface:
                     [
                         InlineKeyboardButton(
                             text="Register",
-                            url=f"https://lyrix.srev.in/register?id={update.message.from_user.id}",
+                            url=f"https://web.lyrix.srev.in/register?id={update.message.from_user.id}",
                         )
                     ],
                 ]
@@ -318,7 +318,7 @@ class CommandInterface:
                     [
                         InlineKeyboardButton(
                             text="Login",
-                            url="https://lyrix.srev.in/login",
+                            url="https://web.lyrix.srev.in/login",
                         )
                     ],
                 ]
