@@ -1,5 +1,6 @@
 import os
 import re
+import random
 from datetime import datetime
 from typing import Tuple
 
@@ -133,9 +134,15 @@ class CommandInterface:
             )
             return
 
-        album_art_info = self.la.get_album_art(song)
-        if album_art_info:
-            album_art_info = f"<a href='{album_art_info}'>🎵</a>"
+        show_fact = bool(random.randint(0, 1))
+        album_info = self.la.get_track_info(song, show_info=show_fact)
+        album_art_info = ""
+        if album_info[0]:
+            album_art_info = f"<a href='{album_info[0]}'>🎵</a>"
+
+        if album_info[1] and show_fact:
+            album_art_info = f"{album_art_info}\n\n<b>Wiki 🧠</b>: {album_info[1]}"
+
         ctx.bot.edit_message_text(
             chat_id=update.message.chat_id,
             message_id=msg.message_id,

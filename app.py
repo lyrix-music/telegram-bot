@@ -3,7 +3,7 @@ from lyrix.bot.logging import make_logger
 import urllib
 from lyrix.bot.models.song import Song
 import os
-from typing import Optional
+from typing import Optional, Tuple
 import requests
 
 from lyrix.bot.models.user import LyrixUser
@@ -52,26 +52,43 @@ class LyrixApp:
                 return LyrixUser.from_dict(user)
         return None
 
-    def get_album_art(self, song: Song) -> str:
+    def get_track_info(self, song: Song, show_info: bool = False) -> Tuple[str, str]:
         last_fm_api_key = os.getenv("LAST_FM_API_KEY")
         if not last_fm_api_key:
-            return ""
+            return "", ""
         if not song.track or not song.artist:
-            return ""
+            return "", ""
         self.logger.info("Request album information")
+        artist = song.artist
+        if "," in artist:
+            artist = artist.split(", ")[0]
         info = requests.get(
-            "http://ws.audioscrobbler.com/2.0/?method=album.getinfo"
-            "&api_key={API_KEY}&artist={artist}&album={album}&format=json".format(
+            "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
+            "&api_key={API_KEY}&artist={artist}&track={track}&autocorrect=1"
+            "&format=json".format(
                 API_KEY=last_fm_api_key,
-                artist=urllib.parse.quote_plus(song.artist),
-                album=urllib.parse.quote_plus(song.track),
+                artist=urllib.parse.quote_plus(artist),
+                track=urllib.parse.quote_plus(song.track),
             )
         ).json()
 
         self.logger.info("received information")
-        image_infographics = info.get("album", {}).get("image", [])
+        image_infographics = info.get("track", {}).get("album", {}).get("image", [])
 
+        album_art = ""
         for image_info in image_infographics[::-1]:
             if image_info.get("#text"):
-                return image_info.get("#text")
-        return ""
+                album_art = image_info.get("#text")
+                break
+
+        wiki = ""
+        if show_info:
+            wiki = info.get("track", {}).get("wiki", {}).get("summary", "")
+            while wiki.find("<a href") != -1:
+                start_idx = wiki.find("<a href")
+                end_idx = wiki.find("</a>")
+                wiki = wiki[:start_idx] + wiki[end_idx + len("</a>") :]
+                if "<a href" not in wiki:
+                    break
+
+        return album_art, wiki
