@@ -58,7 +58,7 @@ class LyrixApp:
             return "", ""
         if not song.track or not song.artist:
             return "", ""
-        self.logger.info("Request album information")
+        self.logger.info("Requesting Track information from Last.fm api")
         artist = song.artist
         if "," in artist:
             artist = artist.split(", ")[0]
@@ -72,13 +72,13 @@ class LyrixApp:
             )
         ).json()
 
-        self.logger.info("received information")
         image_infographics = info.get("track", {}).get("album", {}).get("image", [])
 
         album_art = ""
         for image_info in image_infographics[::-1]:
             if image_info.get("#text"):
                 album_art = image_info.get("#text")
+                self.logger.info("Received Album Art for song")
                 break
 
         wiki = ""
@@ -88,6 +88,7 @@ class LyrixApp:
                 start_idx = wiki.find("<a href")
                 end_idx = wiki.find("</a>")
                 wiki = wiki[:start_idx] + wiki[end_idx + len("</a>") :]
+                self.logger.info("Received Wiki information for the song")
                 if "<a href" not in wiki:
                     break
 
