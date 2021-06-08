@@ -135,7 +135,6 @@ def main() -> None:
             lambda update, ctx: send_commands(update, ctx, commands, suffix),
         )
     )
-    
 
     # on non command i.e message - general_command the message on Telegram
     dispatcher.add_handler(

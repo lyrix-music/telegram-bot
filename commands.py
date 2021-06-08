@@ -87,9 +87,7 @@ class CommandInterface:
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
             return
-        song = Api.get_current_local_listening_song(
-            user=user
-        )
+        song = Api.get_current_local_listening_song(user=user)
 
         ctx.bot.send_message(
             update.message.chat_id,
@@ -108,6 +106,10 @@ class CommandInterface:
         ctx.bot.send_message(update.message.chat_id, lyrics)
 
     def share_local_song(self, update: Update, ctx: CallbackContext) -> None:
+        msg = ctx.bot.send_message(
+            update.message.chat_id,
+            f"Getting {update.message.from_user.first_name}'s current playing song 🚀",
+        )
         """Share the information of the current listening song from local music player"""
         self.logger.info(
             f"{update.message.from_user.first_name}({update.message.from_user.id})"
@@ -115,21 +117,29 @@ class CommandInterface:
         )
         user = self.la.get_user(update.message.from_user.id)
         if user is None:
-            update.message.reply_text("You haven't logged in yet 👀")
+            ctx.bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=msg.message_id,
+                text="You haven't logged in yet 👀",
+            )
             return
         song = Api.get_current_local_listening_song(user)
 
         if not song.track or not song.artist:
-            update.message.reply_text(
-                f"{update.message.from_user.first_name} "
-                f"is not playing any local song"
+            ctx.bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=msg.message_id,
+                text=f"{update.message.from_user.first_name} is not playing any local song",
             )
             return
 
-        ctx.bot.send_message(
-            update.message.chat_id,
-            f"{update.message.from_user.first_name} "
-            f"is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b>",
+        album_art_info = self.la.get_album_art(song)
+        if album_art_info:
+            album_art_info = f"<a href='{album_art_info}'>🎵</a>"
+        ctx.bot.edit_message_text(
+            chat_id=update.message.chat_id,
+            message_id=msg.message_id,
+            text=f"{update.message.from_user.first_name} is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b> {album_art_info}",
             parse_mode="html",
         )
 
@@ -291,7 +301,8 @@ class CommandInterface:
         )
 
         update.message.reply_text(
-            REGISTER_INTRO_MESSAGE + f" If you are asked for a telegram id, your id is <b>{update.message.from_user.id}</b> 😉.",
+            REGISTER_INTRO_MESSAGE
+            + f" If you are asked for a telegram id, your id is <b>{update.message.from_user.id}</b> 😉.",
             parse_mode="html",
             reply_markup=InlineKeyboardMarkup(
                 [
