@@ -1,4 +1,6 @@
 import json
+
+from swaglyrics.cli import stripper
 from lyrix.bot.logging import make_logger
 import urllib
 from lyrix.bot.models.song import Song
@@ -64,7 +66,9 @@ class LyrixApp:
             artist = artist.split(", ")[0]
 
         # clean the artist names with some popular substitutions
-        artist = artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
+        artist = artist.replace("- Music", "")
+        artist = stripper('', artist).rstrip('-').replace("-", " ")
+        self.logger.info(f"Cleaned artist name from {song.artist} to {artist}")
 
         info = requests.get(
             "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
