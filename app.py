@@ -62,6 +62,10 @@ class LyrixApp:
         artist = song.artist
         if "," in artist:
             artist = artist.split(", ")[0]
+
+        # clean the artist names with some popular substitutions
+        artist = artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
+
         info = requests.get(
             "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
             "&api_key={API_KEY}&artist={artist}&track={track}&autocorrect=1"
