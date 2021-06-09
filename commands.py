@@ -482,4 +482,5 @@ class CommandInterface:
                 )
             )
 
-        update.inline_query.answer(results)
+        # cache only for two minutes, because by then, the user might have changed the song ¯\_(ツ)_/¯
+        update.inline_query.answer(results, cache_time=2 * 60)
