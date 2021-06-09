@@ -1,19 +1,29 @@
 import json
+from collections import namedtuple
 from html import escape
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 
 import spotipy
 import telegram
 
 from swaglyrics.cli import get_lyrics
-from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton, User
 from telegram.ext import CallbackContext
 
 from lyrix.bot.app import LyrixApp
 from lyrix.bot.logging import make_logger
-
+from lyrix.bot.models.song import Song
 
 logger = make_logger("core")
+
+
+class LyrixSpotifyMetadata:
+    def __init__(
+        self, song: Song = None, track_info: dict = None, error_message: str = None
+    ):
+        self.song = song
+        self.track_info = track_info
+        self.error_message = error_message
 
 
 def add_song_to_playlist(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
@@ -56,71 +66,57 @@ def add_song_to_playlist(la: LyrixApp, message: Message, ctx: CallbackContext) -
 
 
 def _get_current_playing_song(
-    la: LyrixApp, message: Message, ctx: CallbackContext
-) -> Optional[Tuple[str, list, dict]]:
-    user = la.get_spotify_user_from_telegram_user(message.from_user.id)
+    la: LyrixApp,
+    from_user: User,
+) -> Optional[LyrixSpotifyMetadata]:
+    user = la.get_spotify_user_from_telegram_user(from_user.id)
 
     if user is None:
-        ctx.bot.send_message(
-            message.chat_id,
-            "😔, I couldn't find you in my database. Have you registered yet?",
+        return LyrixSpotifyMetadata(
+            error_message="😔, I couldn't find you in my database. Have you registered yet?"
         )
-        return
 
     spotify_auth_token = user.get_access_token()
     logger.info(f"Received spotify auth token: {spotify_auth_token}")
     sp = spotipy.Spotify(auth=spotify_auth_token)
     logger.info(
-        f"{message.from_user.first_name}({message.from_user.id}) "
-        f"Authenticated with Spotify"
+        f"{from_user.first_name}({from_user.id}) " f"Authenticated with Spotify"
     )
 
     logger.info("Getting currently playing track on spotify")
     track = sp.current_user_playing_track()
 
     if track is None or not track["is_playing"]:
-        logger.info(
-            f"{message.from_user.first_name} is not playing anything on Spotify."
+        logger.info(f"{from_user.first_name} is not playing anything on Spotify.")
+        return LyrixSpotifyMetadata(
+            error_message="Looks like you are not playing anything on Spotify."
         )
-        ctx.bot.send_message(
-            message.chat_id, "Looks like you are not playing anything on Spotify."
-        )
-        return
+
     elif track["item"] is None:
         # FIXME: not really sure
-        logger.info(f"{message.from_user.first_name} is likely to be having ads now.")
-        ctx.bot.send_message(message.chat_id, "😌👍 Ad time")
-        return
+        logger.info(f"{from_user.first_name} is likely to be having ads now.")
+        return LyrixSpotifyMetadata(error_message="😌👍 Ad time")
 
     # telegram doesnt like - character
     song_name = track["item"]["name"]
     artist_names = [x["name"] for x in track["item"]["artists"]]
     logger.info(f"{song_name} by {', '.join(artist_names)}")
-    return song_name, artist_names, track
-
-
-def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
-    logger.info(
-        f"{message.from_user.first_name}({message.from_user.id}) "
-        f"requested to share the currently playing song."
+    return LyrixSpotifyMetadata(
+        song=Song(artist=artist_names, track=song_name), track_info=track
     )
 
-    currently_playing = _get_current_playing_song(la, message, ctx)
-    if not currently_playing:
-        return
 
-    first_name = message.from_user.first_name
-    song_name, artist_names, track = currently_playing
-    artist_names_str = escape(", ".join(artist_names))
+def parse_spotify_data(song: LyrixSpotifyMetadata, from_user: User):
+    track = song.track_info
+    artist_names_str = escape(", ".join(song.song.artist))
     track_id = escape(track["item"]["uri"])
 
     try:
-        url = track["item"]["external_urls"]["spotify"]
-        right_now = f"""{first_name} is currently playing 
-<a href='{url}'><b>{escape(song_name)}</b> by {artist_names_str}</a>
+        url = song.track_info["item"]["external_urls"]["spotify"]
+        right_now = f"""{from_user.first_name} is currently playing 
+<a href='{url}'><b>{escape(song.song.track)}</b> by {artist_names_str}</a>
 
-<i>lyrix@({track_id})</i>
-        """
+<i>lyrix@({track_id})</i>"""
         reply_markup = InlineKeyboardMarkup(
             [
                 [
@@ -134,8 +130,31 @@ def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
 
     except Exception:
         reply_markup = None
-        right_now = f"{first_name} is currently playing {escape(song_name)} by {artist_names_str}"
+        right_now = (
+            f"{from_user.first_name} is currently playing "
+            f"{escape(song.song.track)} by {artist_names_str}"
+        )
+    return right_now, reply_markup
 
+
+def share_song_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) -> None:
+    logger.info(
+        f"{message.from_user.first_name}({message.from_user.id}) "
+        f"requested to share the currently playing song."
+    )
+
+    currently_playing = _get_current_playing_song(la, from_user=message.from_user)
+    if currently_playing.error_message:
+        ctx.bot.send_message(message.chat_id, currently_playing.error_message)
+        return
+    if not currently_playing.song:
+        return
+    if not currently_playing.song.track:
+        return
+
+    right_now, reply_markup = parse_spotify_data(
+        from_user=message.from_user, song=currently_playing
+    )
     ctx.bot.send_message(
         message.chat_id,
         right_now,
@@ -151,27 +170,34 @@ def get_lyrics_for_user(la: LyrixApp, message: Message, ctx: CallbackContext) ->
         f"requested for lyrics of the currently playing song."
     )
 
-    currently_playing = _get_current_playing_song(la, message, ctx)
-    if not currently_playing:
+    spot_song = _get_current_playing_song(la, from_user=message.from_user)
+    if spot_song.error_message:
+        ctx.bot.send_message(message.chat_id, spot_song.error_message)
+    if not spot_song.song:
+        return
+    if not spot_song.song.track:
         return
 
-    song_name, artist_names, track = currently_playing
-    artist_names_str = escape(", ".join(artist_names))
+    track = spot_song.track_info
+    song = spot_song.song
+
+    artist_names_str = escape(", ".join(song.artist))
 
     try:
         url = track["item"]["external_urls"]["spotify"]
         right_now = (
-            f"Getting lyrics for <a href='{url}'>{song_name} by {artist_names_str}</a>"
+            f"Getting lyrics for <a href='{url}'>{song.track} by {artist_names_str}</a>"
         )
     except Exception:
-        right_now = f"Getting lyrics for {song_name} by {artist_names_str}"
+        right_now = f"Getting lyrics for {song.track} by {artist_names_str}"
 
     ctx.bot.send_message(message.chat_id, right_now, parse_mode=telegram.ParseMode.HTML)
 
-    logger.debug(f"Trying to get the lyrics for {song_name} by {artist_names_str}")
-    lyrics = get_lyrics(song_name, artist_names[0])
+    logger.debug(f"Trying to get the lyrics for {song.track} by {artist_names_str}")
+    lyrics = get_lyrics(song.track, song.artist[0])
+
     if lyrics is None or not lyrics:
-        logger.warn(f"Couldn't get the lyrics for {song_name} by {artist_names[0]}")
+        logger.warn(f"Couldn't get the lyrics for {song.track} by {song.artist[0]}")
         ctx.bot.send_message(message.chat_id, "Couldn't find the lyrics. 😔😔😔")
         return
 

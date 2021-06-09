@@ -39,6 +39,8 @@ from lyrix.bot.fetch import (
     clear_playlist_from_spotify,
     share_playlist_from_spotify,
     play_song_with_spotify,
+    _get_current_playing_song,
+    parse_spotify_data,
 )
 from lyrix.bot.logging import make_logger
 from lyrix.bot.models.song import Song
@@ -52,8 +54,7 @@ def get_username_and_homeserver(user_id: str) -> Tuple[str, str]:
     return user_id.split("@")[0][1:], user_id.split("@")[1]
 
 
-LyrixMarkup = namedtuple('LyrixMarkup', 'markup image_url')
-
+LyrixMarkup = namedtuple("LyrixMarkup", "markup image_url")
 
 
 class CommandInterface:
@@ -444,12 +445,38 @@ class CommandInterface:
             )
 
         if "spot" in query:
+            song = _get_current_playing_song(self.la, from_user=from_user)
+            if song.error_message:
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(uuid4()),
+                        title=f"🚧 {song.error_message}",
+                        input_message_content=InputTextMessageContent(
+                            f"Couldn't get the song: {song.error_message}",
+                            parse_mode=ParseMode.HTML,
+                        ),
+                    )
+                )
+                update.inline_query.answer(results)
+                return
+            if not song.song or not song.song.track:
+                return
+
+            thumb_url = (
+                song.track_info["item"]["album"].get("images", [{}])[0].get("url")
+            )
+            reply_text, inline_keyboard = parse_spotify_data(
+                song=song, from_user=from_user
+            )
             results.append(
                 InlineQueryResultArticle(
                     id=str(uuid4()),
-                    title=f"Lyrix: Under construction 🚧",
+                    thumb_url=thumb_url,
+                    title=f"{song.song.track} by {song.song.track}",
+                    description="From your Spotify, powered by Lyrix.",
                     input_message_content=InputTextMessageContent(
-                        "mm.. bait for some tym ig... " "doesn't work at the moment 😌👌",
+                        message_text=reply_text,
+                        reply_markup=inline_keyboard,
                         parse_mode=ParseMode.HTML,
                     ),
                 )

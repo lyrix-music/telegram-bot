@@ -1,5 +1,8 @@
+from typing import Union
+
+
 class Song:
-    def __init__(self, artist: str = "", track: str = ""):
+    def __init__(self, artist: Union[str, list] = "", track: str = ""):
         self.artist = artist
         self.track = track
 
