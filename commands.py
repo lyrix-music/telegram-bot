@@ -1,8 +1,9 @@
 import os
 import re
 import random
+from collections import namedtuple
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, NamedTuple
 from uuid import uuid4
 
 from spotipy import CacheFileHandler, SpotifyOAuth
@@ -49,6 +50,10 @@ lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
 
 def get_username_and_homeserver(user_id: str) -> Tuple[str, str]:
     return user_id.split("@")[0][1:], user_id.split("@")[1]
+
+
+LyrixMarkup = namedtuple('LyrixMarkup', 'markup image_url')
+
 
 
 class CommandInterface:
@@ -155,7 +160,7 @@ class CommandInterface:
         ctx.bot.edit_message_text(
             chat_id=update.message.chat_id,
             message_id=msg.message_id,
-            text=html_parsed_message,
+            text=html_parsed_message.markup,
             parse_mode="html",
         )
 
@@ -378,7 +383,7 @@ class CommandInterface:
 
     def get_current_playing_local_song_markup(
         self, song: Song, from_user, show_fact: bool
-    ) -> str:
+    ) -> LyrixMarkup:
         album_info = self.la.get_track_info(song, show_info=show_fact)
         album_art_info = ""
         if album_info[0]:
@@ -391,7 +396,7 @@ class CommandInterface:
             f"{from_user.first_name} is now playing \n"
             f"<b>{song.track}</b>\nby <b>{song.artist}</b> {album_art_info}"
         )
-        return html_parsed_message
+        return LyrixMarkup(markup=html_parsed_message, image_url=album_info[0])
 
     def inlinequery(self, update: Update, context: CallbackContext) -> None:
         """Handle the inline query."""
@@ -428,10 +433,11 @@ class CommandInterface:
             results.append(
                 InlineQueryResultArticle(
                     id=str(uuid4()),
+                    thumb_url=html_parsed_message.image_url,
                     title=f"{song.track} by {song.artist}",
+                    description="From your local player, powered by Lyrix",
                     input_message_content=InputTextMessageContent(
-                        html_parsed_message,
-                        description="From your local player, powered by Lyrix",
+                        html_parsed_message.markup,
                         parse_mode=ParseMode.HTML,
                     ),
                 )
