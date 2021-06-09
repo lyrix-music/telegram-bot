@@ -67,7 +67,7 @@ class LyrixApp:
 
         # clean the artist names with some popular substitutions
         artist = artist.replace("- Music", "")
-        artist = stripper('', artist).rstrip('-').replace("-", " ")
+        artist = stripper("", artist).rstrip("-").replace("-", " ")
         self.logger.info(f"Cleaned artist name from {song.artist} to {artist}")
 
         info = requests.get(

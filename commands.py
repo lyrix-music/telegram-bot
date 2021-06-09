@@ -3,12 +3,21 @@ import re
 import random
 from datetime import datetime
 from typing import Tuple
+from uuid import uuid4
 
 from spotipy import CacheFileHandler, SpotifyOAuth
 
 from lyrix.bot.api import Api
 from lyrix.bot.app import LyrixApp
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Chat
+from telegram import (
+    Update,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    Chat,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    ParseMode,
+)
 from telegram.ext import (
     CallbackContext,
 )
@@ -31,6 +40,7 @@ from lyrix.bot.fetch import (
     play_song_with_spotify,
 )
 from lyrix.bot.logging import make_logger
+from lyrix.bot.models.song import Song
 from lyrix.bot.models.user import LyrixUser
 
 
@@ -45,6 +55,7 @@ class CommandInterface:
     logger = make_logger("commands")
 
     def __init__(self, la: LyrixApp, prefix: str = "$lx"):
+
         self.la = la
         self.la.load()
         self.command_prefix = prefix
@@ -107,11 +118,12 @@ class CommandInterface:
         ctx.bot.send_message(update.message.chat_id, lyrics)
 
     def share_local_song(self, update: Update, ctx: CallbackContext) -> None:
+        """Share the information of the current listening song from local music player"""
         msg = ctx.bot.send_message(
             update.message.chat_id,
             f"Getting {update.message.from_user.first_name}'s current playing song 🚀",
         )
-        """Share the information of the current listening song from local music player"""
+
         self.logger.info(
             f"{update.message.from_user.first_name}({update.message.from_user.id})"
             f" issues local share song command"
@@ -135,18 +147,15 @@ class CommandInterface:
             return
 
         show_fact = bool(random.randint(0, 1))
-        album_info = self.la.get_track_info(song, show_info=show_fact)
-        album_art_info = ""
-        if album_info[0]:
-            album_art_info = f"<a href='{album_info[0]}'>🎵</a>"
-
-        if album_info[1] and show_fact:
-            album_art_info = f"{album_art_info}\n\n<b>Wiki 🧠</b>: {album_info[1]}"
-
+        html_parsed_message = self.get_current_playing_local_song_markup(
+            song=song,
+            from_user=update.message.from_user,
+            show_fact=show_fact,
+        )
         ctx.bot.edit_message_text(
             chat_id=update.message.chat_id,
             message_id=msg.message_id,
-            text=f"{update.message.from_user.first_name} is now playing \n<b>{song.track}</b>\nby <b>{song.artist}</b> {album_art_info}",
+            text=html_parsed_message,
             parse_mode="html",
         )
 
@@ -366,3 +375,78 @@ class CommandInterface:
                 ]
             ),
         )
+
+    def get_current_playing_local_song_markup(
+        self, song: Song, from_user, show_fact: bool
+    ) -> str:
+        album_info = self.la.get_track_info(song, show_info=show_fact)
+        album_art_info = ""
+        if album_info[0]:
+            album_art_info = f"<a href='{album_info[0]}'>🎵</a>"
+
+        if album_info[1] and show_fact:
+            album_art_info = f"{album_art_info}\n\n<b>Wiki 🧠</b>: {album_info[1]}"
+
+        html_parsed_message = (
+            f"{from_user.first_name} is now playing \n"
+            f"<b>{song.track}</b>\nby <b>{song.artist}</b> {album_art_info}"
+        )
+        return html_parsed_message
+
+    def inlinequery(self, update: Update, context: CallbackContext) -> None:
+        """Handle the inline query."""
+        query = update.inline_query.query
+        from_user = update.inline_query.from_user
+
+        if query == "":
+            return
+
+        if "loc" not in query and "spot" not in query:
+            return
+        self.logger.info(
+            f"{update.inline_query.from_user.first_name} triggered inline query with {query}"
+        )
+
+        user = self.la.get_user(from_user.id)
+        results = []
+        if not user:
+            return
+
+        if "loc" in query:
+            self.logger.info(f"{from_user.first_name} triggered local song query")
+            song = Api.get_current_local_listening_song(user)
+            if not song.track or not song.artist:
+                return
+
+            show_fact = False
+            html_parsed_message = self.get_current_playing_local_song_markup(
+                song=song,
+                from_user=from_user,
+                show_fact=show_fact,
+            )
+
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(uuid4()),
+                    title=f"{song.track} by {song.artist}",
+                    input_message_content=InputTextMessageContent(
+                        html_parsed_message,
+                        description="From your local player, powered by Lyrix",
+                        parse_mode=ParseMode.HTML,
+                    ),
+                )
+            )
+
+        if "spot" in query:
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(uuid4()),
+                    title=f"Lyrix: Under construction 🚧",
+                    input_message_content=InputTextMessageContent(
+                        "mm.. bait for some tym ig... " "doesn't work at the moment 😌👌",
+                        parse_mode=ParseMode.HTML,
+                    ),
+                )
+            )
+
+        update.inline_query.answer(results)

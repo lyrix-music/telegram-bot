@@ -3,6 +3,7 @@ import os
 import re
 import hashlib
 from typing import Tuple
+from uuid import uuid4
 
 import requests
 import swaglyrics.cli as sl
@@ -11,7 +12,14 @@ from datetime import datetime
 from spotipy import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    ParseMode,
+)
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -19,10 +27,13 @@ from telegram.ext import (
     Filters,
     CallbackContext,
     commandhandler,
+    InlineQueryHandler,
 )
 
 from dotenv import load_dotenv
+from telegram.utils.helpers import escape_markdown
 
+from lyrix.bot.api import Api
 from lyrix.bot.app import LyrixApp
 from lyrix.bot.commands import CommandInterface
 from lyrix.bot.constants import SCOPES
@@ -44,7 +55,6 @@ from lyrix.bot.constants import (
 
 load_dotenv()
 
-
 client_id = os.environ["SPOTIPY_CLIENT_ID"]
 client_secret = os.environ["SPOTIPY_CLIENT_SECRET"]
 lyrix_backend = os.environ["LYRIX_BACKEND"]
@@ -52,7 +62,6 @@ lyrix_backend = os.environ["LYRIX_BACKEND"]
 lyrix_backend_token = os.environ["LYRIX_BACKEND_TOKEN"]
 
 setup_logging()
-
 
 t_logger = make_logger("tg")
 
@@ -141,6 +150,7 @@ def main() -> None:
         MessageHandler(Filters.text & ~Filters.command, ci.general_command)
     )
 
+    dispatcher.add_handler(InlineQueryHandler(ci.inlinequery))
     logger.info("Bot is up, and is ready to receive commands.")
 
     # Start the Bot
