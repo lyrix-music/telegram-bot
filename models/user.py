@@ -18,6 +18,7 @@ class LyrixUser:
         self.username = username
         self.homeserver = homeserver
         self.token = token
+        self.playlist_id = None
 
     def parse_to_dict(self):
         return {
