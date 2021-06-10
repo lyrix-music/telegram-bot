@@ -50,6 +50,9 @@ class LyrixUser:
         token = spo.get_access_token(spotify_auth_token)
         return token.get("access_token")
 
+    def set_user_playlist_queue(self, playlist_id: str) -> None:
+        self.playlist_id = playlist_id
+
 
 class User:
     def __init__(
