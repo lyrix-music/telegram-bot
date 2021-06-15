@@ -8,6 +8,8 @@ import os
 from typing import Optional, Tuple
 import requests
 
+
+
 from lyrix.bot.models.user import LyrixUser
 
 STORAGE_JSON_PATH = "spotify.json"

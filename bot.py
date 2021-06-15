@@ -1,24 +1,8 @@
-import datetime
 import os
-import re
-import hashlib
-from typing import Tuple
-from uuid import uuid4
 
-import requests
-import swaglyrics.cli as sl
-from datetime import datetime
-
-from spotipy import CacheFileHandler
-from spotipy.oauth2 import SpotifyOAuth
-
+from dotenv import load_dotenv
 from telegram import (
     Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
-    ParseMode,
 )
 from telegram.ext import (
     Updater,
@@ -26,32 +10,18 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     CallbackContext,
-    commandhandler,
     InlineQueryHandler,
 )
 
-from dotenv import load_dotenv
-from telegram.utils.helpers import escape_markdown
-
-from lyrix.bot.api import Api
 from lyrix.bot.app import LyrixApp
 from lyrix.bot.commands import CommandInterface
-from lyrix.bot.constants import SCOPES
-from lyrix.bot.fetch import (
-    get_lyrics_for_user,
-    share_song_for_user,
-    play_song_with_spotify,
-    clear_playlist_from_spotify,
-    share_playlist_from_spotify,
-)
-
 from lyrix.bot.logging import setup_logging, make_logger
-from lyrix.bot.constants import (
-    AUTHORIZED_MESSAGE,
-    NOT_A_VALID_SONG_ERROR_MESSAGE,
-    WELCOME_MESSAGE,
-    REGISTER_INTRO_MESSAGE,
-)
+
+try:
+    from lyrix.bot.external_commands import ExternalCommandInterface
+    external_commands = True
+except ModuleNotFoundError:
+    external_commands = False
 
 load_dotenv()
 
@@ -131,6 +101,11 @@ def main() -> None:
         ],
         [("clearplaylist", ci.clear_playlist), "🗑 Clear the lyrix spotify playlist"],
     ]
+
+    if external_commands:
+        external_ci = ExternalCommandInterface()
+        commands += external_ci.commands()
+
     # on different commands - answer in Telegram
     print("Available commands are:")
     for command, help_message in commands:
