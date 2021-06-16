@@ -47,7 +47,6 @@ from lyrix.bot.models.song import Song
 from lyrix.bot.models.user import LyrixUser
 
 
-
 lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
 
 

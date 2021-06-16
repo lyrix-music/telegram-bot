@@ -19,6 +19,7 @@ from lyrix.bot.logging import setup_logging, make_logger
 
 try:
     from lyrix.bot.external_commands import ExternalCommandInterface
+
     external_commands = True
 except ModuleNotFoundError:
     external_commands = False
@@ -112,11 +113,14 @@ def main() -> None:
         command_text, command_func = command
         command_text = command_text + suffix
         print(f"{command_text} - {help_message}")
-        dispatcher.add_handler(CommandHandler(command_text, command_func))
+        dispatcher.add_handler(
+            CommandHandler(command_text, command_func, run_async=True)
+        )
     dispatcher.add_handler(
         CommandHandler(
             f"help{suffix}",
             lambda update, ctx: send_commands(update, ctx, commands, suffix),
+            run_async=True,
         )
     )
 
