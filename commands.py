@@ -397,6 +397,9 @@ class CommandInterface:
             f"{from_user.first_name} is now playing \n"
             f"<b>{song.track}</b>\nby <b>{song.artist}</b> {album_art_info}"
         )
+        if song.source == "music.youtube.com":
+            html_parsed_message += "\n"
+            html_parsed_message += f"On <a href='{song.url}'>Youtube Music</a>"
         return LyrixMarkup(markup=html_parsed_message, image_url=album_info[0])
 
     def inlinequery(self, update: Update, context: CallbackContext) -> None:
