@@ -19,6 +19,6 @@ class Song:
         return Song(
             artist=data["artist"],
             track=data["track"],
-            url=data["url"],
-            source=data["source"],
+            url=data.get("url"),
+            source=data.get("source"),
         )
