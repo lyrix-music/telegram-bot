@@ -19,7 +19,6 @@ from lyrix.bot.logging import setup_logging, make_logger
 
 try:
     from lyrix.bot.external_commands import ExternalCommandInterface
-
     external_commands = True
 except ModuleNotFoundError:
     external_commands = False
