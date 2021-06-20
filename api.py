@@ -69,7 +69,7 @@ class Api:
             user,
             "/connect/lastfm",
             auth=True,
-        )
+        ).json()
         return data["redirect"]
 
     @staticmethod
