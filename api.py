@@ -61,18 +61,16 @@ class Api:
         return 200 <= data.status_code <= 210
 
     @staticmethod
-    def send_lastfm_token(user, lastfm_token: str) -> bool:
+    def generate_lastfm_token(user) -> str:
         """
-        POST /user/service/lastfm/token
+        GET /connect/lastfm
         """
-        data = Api._post(
+        data = Api._get(
             user,
-            "/user/service/lastfm/token",
+            "/connect/lastfm",
             auth=True,
-            data={"lastfm_token": lastfm_token},
         )
-        return 200 <= data.status_code <= 210
-
+        return data["redirect"]
 
     @staticmethod
     def get_spotify_token(user) -> str:
