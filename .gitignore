@@ -1,1 +1,5 @@
 external_commands.py
+.env
+__pycache__
+spotify.json
+.idea

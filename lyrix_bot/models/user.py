@@ -2,8 +2,8 @@ import os.path
 
 from spotipy import SpotifyOAuth, CacheFileHandler
 
-from lyrix.bot.api import Api
-from lyrix.bot.constants import SCOPES
+from lyrix_api.api import Api
+from lyrix_bot.constants import SCOPES
 
 
 class LyrixUser:
