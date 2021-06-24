@@ -13,12 +13,12 @@ from telegram.ext import (
     InlineQueryHandler,
 )
 
-from lyrix_bot.app import LyrixApp
-from lyrix_bot.commands import CommandInterface
-from lyrix_bot.logger import setup_logging, make_logger
+from lyrix_telegram_bot.app import LyrixApp
+from lyrix_telegram_bot.commands import CommandInterface
+from lyrix_telegram_bot.logger import setup_logging, make_logger
 
 try:
-    from lyrix_bot.external_commands import ExternalCommandInterface
+    from lyrix_telegram_bot.external_commands import ExternalCommandInterface
 
     external_commands = True
 except ModuleNotFoundError:

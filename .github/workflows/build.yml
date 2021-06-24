@@ -1,0 +1,42 @@
+name: Go
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - v*.*
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies, Check quality
+      run: |
+        python -m pip install poetry
+        poetry install
+        poetry run black --check .
+
+    - name: Build
+      run: |
+        poetry build
+
+    - name: Release
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        wget https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
+        chmod +x pyuploadtool-x86_64.AppImage
+        ./pyuploadtool-x86_64.AppImage dist/*.*
+
+

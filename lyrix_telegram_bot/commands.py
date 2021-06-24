@@ -9,7 +9,7 @@ from uuid import uuid4
 from spotipy import CacheFileHandler, SpotifyOAuth
 
 from lyrix_api.api import Api
-from lyrix_bot.app import LyrixApp
+from lyrix_telegram_bot.app import LyrixApp
 from telegram import (
     Update,
     InlineKeyboardMarkup,
@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 import swaglyrics.cli as sl
 
-from lyrix_bot.constants import (
+from lyrix_telegram_bot.constants import (
     NO_LYRICS_ERROR,
     WELCOME_MESSAGE,
     AUTHORIZED_MESSAGE,
@@ -33,7 +33,7 @@ from lyrix_bot.constants import (
     SCOPES,
     LOGIN_INTRO_MESSAGE,
 )
-from lyrix_bot.fetch import (
+from lyrix_telegram_bot.fetch import (
     share_song_for_user,
     get_lyrics_for_user,
     clear_playlist_from_spotify,
@@ -42,9 +42,9 @@ from lyrix_bot.fetch import (
     _get_current_playing_song,
     parse_spotify_data,
 )
-from lyrix_bot.logger import make_logger
-from lyrix_bot.models.song import Song
-from lyrix_bot.models.user import LyrixUser
+from lyrix_telegram_bot.logger import make_logger
+from lyrix_telegram_bot.models.song import Song
+from lyrix_telegram_bot.models.user import LyrixUser
 
 
 lyrix_id_match = re.compile(r"lyrix@\((.*)\)")

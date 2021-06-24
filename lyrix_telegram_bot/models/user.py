@@ -3,7 +3,7 @@ import os.path
 from spotipy import SpotifyOAuth, CacheFileHandler
 
 from lyrix_api.api import Api
-from lyrix_bot.constants import SCOPES
+from lyrix_telegram_bot.constants import SCOPES
 
 
 class LyrixUser:
