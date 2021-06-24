@@ -1,5 +1,3 @@
-import json
-from collections import namedtuple
 from html import escape
 from typing import Tuple, Optional, Union
 
@@ -10,9 +8,9 @@ from swaglyrics.cli import get_lyrics
 from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton, User
 from telegram.ext import CallbackContext
 
-from lyrix.bot.app import LyrixApp
-from lyrix.bot.logging import make_logger
-from lyrix.bot.models.song import Song
+from lyrix_bot.app import LyrixApp
+from lyrix_bot.logger import make_logger
+from lyrix_bot.models.song import Song
 
 logger = make_logger("core")
 

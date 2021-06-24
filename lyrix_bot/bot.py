@@ -13,12 +13,12 @@ from telegram.ext import (
     InlineQueryHandler,
 )
 
-from lyrix.bot.app import LyrixApp
-from lyrix.bot.commands import CommandInterface
-from lyrix.bot.logging import setup_logging, make_logger
+from lyrix_bot.app import LyrixApp
+from lyrix_bot.commands import CommandInterface
+from lyrix_bot.logger import setup_logging, make_logger
 
 try:
-    from lyrix.bot.external_commands import ExternalCommandInterface
+    from lyrix_bot.external_commands import ExternalCommandInterface
 
     external_commands = True
 except ModuleNotFoundError:
@@ -129,7 +129,7 @@ def main() -> None:
         MessageHandler(Filters.text & ~Filters.command, ci.general_command)
     )
 
-    dispatcher.add_handler(InlineQueryHandler(ci.inlinequery))
+    dispatcher.add_handler(InlineQueryHandler(ci.inline_query))
     logger.info("Bot is up, and is ready to receive commands.")
 
     # Start the Bot

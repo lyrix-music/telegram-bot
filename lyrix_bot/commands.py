@@ -3,13 +3,13 @@ import re
 import random
 from collections import namedtuple
 from datetime import datetime
-from typing import Tuple, NamedTuple
+from typing import Tuple
 from uuid import uuid4
 
 from spotipy import CacheFileHandler, SpotifyOAuth
 
-from lyrix.bot.api import Api
-from lyrix.bot.app import LyrixApp
+from lyrix_api.api import Api
+from lyrix_bot.app import LyrixApp
 from telegram import (
     Update,
     InlineKeyboardMarkup,
@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 import swaglyrics.cli as sl
 
-from lyrix.bot.constants import (
+from lyrix_bot.constants import (
     NO_LYRICS_ERROR,
     WELCOME_MESSAGE,
     AUTHORIZED_MESSAGE,
@@ -33,7 +33,7 @@ from lyrix.bot.constants import (
     SCOPES,
     LOGIN_INTRO_MESSAGE,
 )
-from lyrix.bot.fetch import (
+from lyrix_bot.fetch import (
     share_song_for_user,
     get_lyrics_for_user,
     clear_playlist_from_spotify,
@@ -42,9 +42,9 @@ from lyrix.bot.fetch import (
     _get_current_playing_song,
     parse_spotify_data,
 )
-from lyrix.bot.logging import make_logger
-from lyrix.bot.models.song import Song
-from lyrix.bot.models.user import LyrixUser
+from lyrix_bot.logger import make_logger
+from lyrix_bot.models.song import Song
+from lyrix_bot.models.user import LyrixUser
 
 
 lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
@@ -113,11 +113,15 @@ class CommandInterface:
             parse_mode="html",
         )
 
-        artist = song.artist.replace("BTS (防弹少年团)", "BTS").replace("- Music", "")
+        artist = (
+            sl.stripper("", song.artist.replace(" - Music", ""))
+            .rstrip("-")
+            .replace("-", " ")
+        )
         lyrics = sl.get_lyrics(song.track, artist)
 
         if lyrics is None or not lyrics:
-            self.logger.warn(f"Couldn't get the lyrics for {song.track} by {artist}")
+            self.logger.warning(f"Couldn't get the lyrics for {song.track} by {artist}")
             ctx.bot.send_message(update.message.chat_id, NO_LYRICS_ERROR)
             return
 
@@ -358,7 +362,8 @@ class CommandInterface:
             ),
         )
 
-    def connect_spotify(self, update: Update, _: CallbackContext) -> None:
+    @staticmethod
+    def connect_spotify(update: Update, _: CallbackContext) -> None:
         """Gets the token of a user"""
         handler = CacheFileHandler(
             username=str(update.message.from_user.id),
@@ -402,7 +407,7 @@ class CommandInterface:
             html_parsed_message += f"On <a href='{song.url}'>Youtube Music</a>"
         return LyrixMarkup(markup=html_parsed_message, image_url=album_info[0])
 
-    def inlinequery(self, update: Update, context: CallbackContext) -> None:
+    def inline_query(self, update: Update, _: CallbackContext) -> None:
         """Handle the inline query."""
         query = update.inline_query.query
         from_user = update.inline_query.from_user

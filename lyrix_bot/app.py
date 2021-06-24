@@ -1,15 +1,15 @@
 import json
+import urllib.parse
 
 from swaglyrics.cli import stripper
-from lyrix.bot.logging import make_logger
-import urllib
-from lyrix.bot.models.song import Song
+from lyrix_bot.logger import make_logger
+from lyrix_bot.models.song import Song
 import os
 from typing import Optional, Tuple
 import requests
 
 
-from lyrix.bot.models.user import LyrixUser
+from lyrix_bot.models.user import LyrixUser
 
 STORAGE_JSON_PATH = "spotify.json"
 DEFAULT_DATA = {"version": 1, "users": []}
