@@ -3,6 +3,7 @@ from typing import Tuple, Optional, Union
 
 import spotipy
 import telegram
+import urllib.parse
 
 from swaglyrics.cli import get_lyrics
 from telegram import Message, InlineKeyboardMarkup, InlineKeyboardButton, User
@@ -73,9 +74,12 @@ def _get_current_playing_song(
         return LyrixSpotifyMetadata(
             error_message="😔, I couldn't find you in my database. Have you registered yet?"
         )
-
-    spotify_auth_token = user.get_access_token()
-    logger.info(f"Received spotify auth token: {spotify_auth_token}")
+    try:
+        spotify_auth_token = user.get_access_token()
+    except spotipy.oauth2.SpotifyOauthError as e:
+        return LyrixSpotifyMetadata(
+            error_message=f"🙅, I couldn't authenticate with Spotify. {e}",
+        )
     sp = spotipy.Spotify(auth=spotify_auth_token)
     logger.info(
         f"{from_user.first_name}({from_user.id}) " f"Authenticated with Spotify"
@@ -115,6 +119,9 @@ def parse_spotify_data(song: LyrixSpotifyMetadata, from_user: User):
 <a href='{url}'><b>{escape(song.song.track)}</b> by {artist_names_str}</a>
 
 <i>lyrix@({track_id})</i>"""
+
+        slug = f"{song.song.track} {artist_names_str}"
+        slug_encoded = urllib.parse.quote(slug)
         reply_markup = InlineKeyboardMarkup(
             [
                 [
@@ -122,7 +129,21 @@ def parse_spotify_data(song: LyrixSpotifyMetadata, from_user: User):
                         text="▶️ Play this",
                         url=f"{url}",
                     )
-                ]
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="▶️ YT Music",
+                        url=f"https://music.youtube.com/search?q={slug_encoded}",
+                    ),
+                    InlineKeyboardButton(
+                        text="▶️ Spotify",
+                        url=f"https://open.spotify.com/search/{slug_encoded}",
+                    ),
+                    InlineKeyboardButton(
+                        text="▶️ Soundcloud",
+                        url=f"https://soundcloud.com/search?q={slug_encoded}",
+                    ),
+                ],
             ]
         )
 
@@ -215,7 +236,15 @@ def play_song_with_spotify(
         )
         return
 
-    sp = spotipy.Spotify(auth=user.get_access_token())
+    try:
+        sp = spotipy.Spotify(auth=user.get_access_token())
+    except spotipy.oauth2.SpotifyOauthError as e:
+        ctx.bot.send_message(
+            message.chat_id,
+            f"🙅, I couldn't authenticate with Spotify. {e}",
+        )
+        return
+
     logger.info(
         f"{message.from_user.first_name}({message.from_user.id}) "
         f"Authenticated with Spotify"
@@ -269,11 +298,18 @@ def clear_playlist_from_spotify(
         )
         return
 
-    sp = spotipy.Spotify(auth=user.get_access_token())
-    logger.info(
-        f"{message.from_user.first_name}({message.from_user.id}) "
-        f"Authenticated with Spotify"
-    )
+    try:
+        sp = spotipy.Spotify(auth=user.get_access_token())
+        logger.info(
+            f"{message.from_user.first_name}({message.from_user.id}) "
+            f"Authenticated with Spotify"
+        )
+    except spotipy.oauth2.SpotifyOauthError as e:
+        ctx.bot.send_message(
+            message.chat_id,
+            f"🙅, I couldn't authenticate with Spotify. {e}",
+        )
+        return
 
     if user.playlist_id is None:
         logger.info(
@@ -324,7 +360,14 @@ def share_playlist_from_spotify(
         return
 
     if user.playlist_id is None:
-        sp = spotipy.Spotify(auth=user.get_access_token())
+        try:
+            sp = spotipy.Spotify(auth=user.get_access_token())
+        except spotipy.oauth2.SpotifyOauthError as e:
+            ctx.bot.send_message(
+                message.chat_id,
+                f"🙅, I couldn't authenticate with Spotify. {e}",
+            )
+            return
         logger.info(
             f"{message.from_user.first_name}({message.from_user.id}) "
             f"Authenticated with Spotify"

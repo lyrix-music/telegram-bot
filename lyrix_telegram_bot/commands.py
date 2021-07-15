@@ -1,6 +1,7 @@
 import os
 import re
 import random
+import urllib.parse
 from collections import namedtuple
 from datetime import datetime
 from typing import Tuple
@@ -162,11 +163,32 @@ class CommandInterface:
             from_user=update.message.from_user,
             show_fact=show_fact,
         )
+        slug = f"{song.track} {song.artist}"
+        slug_encoded = urllib.parse.quote(slug)
+        reply_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text="▶️ YT Music",
+                        url=f"https://music.youtube.com/search?q={slug_encoded}",
+                    ),
+                    InlineKeyboardButton(
+                        text="▶️ Spotify",
+                        url=f"https://open.spotify.com/search/{slug_encoded}",
+                    ),
+                    InlineKeyboardButton(
+                        text="▶️ Soundcloud",
+                        url=f"https://soundcloud.com/search?q={slug_encoded}",
+                    ),
+                ]
+            ]
+        )
         ctx.bot.edit_message_text(
             chat_id=update.message.chat_id,
             message_id=msg.message_id,
             text=html_parsed_message.markup,
             parse_mode="html",
+            reply_markup=reply_markup,
         )
 
     @staticmethod
@@ -365,11 +387,20 @@ class CommandInterface:
     @staticmethod
     def connect_spotify(update: Update, _: CallbackContext) -> None:
         """Gets the token of a user"""
+        cache_path = os.path.join(
+            os.getcwd(), ".cache", f"cache-{update.message.from_user.id}"
+        )
+
+        # remove the old cache if it exists
+        try:
+            if os.path.exists(cache_path):
+                os.remove(cache_path)
+        except Exception:
+            pass
+
         handler = CacheFileHandler(
             username=str(update.message.from_user.id),
-            cache_path=os.path.join(
-                os.getcwd(), ".cache", f"cache-{update.message.from_user.id}"
-            ),
+            cache_path=cache_path,
         )
         update.message.reply_text(
             "Click the button below to connect your spotify account to " "Lyrix.",
