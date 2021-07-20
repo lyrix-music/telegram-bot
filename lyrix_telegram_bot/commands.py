@@ -106,7 +106,14 @@ class CommandInterface:
         if user is None:
             update.message.reply_text("You haven't logged in yet 👀")
             return
-        song = Api.get_current_local_listening_song(user=user)
+        try:
+            song = Api.get_current_local_listening_song(user)
+        except Exception as e:
+            ctx.bot.send_message(
+                update.message.chat_id,
+                f"🙅, I couldn't get your current listening song. Maybe you should log-in again? \n\nError: {e}",
+            )
+            return
 
         ctx.bot.send_message(
             update.message.chat_id,
@@ -147,7 +154,14 @@ class CommandInterface:
                 text="You haven't logged in yet 👀",
             )
             return
-        song = Api.get_current_local_listening_song(user)
+        try:
+            song = Api.get_current_local_listening_song(user)
+        except Exception as e:
+            ctx.bot.send_message(
+                update.message.chat_id,
+                f"🙅, I couldn't get your current listening song. Maybe you should log-in again? \n\nError: {e}",
+            )
+            return
 
         if not song.track or not song.artist:
             ctx.bot.edit_message_text(
@@ -459,7 +473,10 @@ class CommandInterface:
 
         if "loc" in query:
             self.logger.info(f"{from_user.first_name} triggered local song query")
-            song = Api.get_current_local_listening_song(user)
+            try:
+                song = Api.get_current_local_listening_song(user)
+            except Exception as e:
+                return
             if not song.track or not song.artist:
                 return
 
