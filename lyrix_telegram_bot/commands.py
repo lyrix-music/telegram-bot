@@ -268,6 +268,28 @@ class CommandInterface:
             parse_mode="html",
         )
 
+    def lyrix(self, update: Update, _: CallbackContext) -> None:
+        self.logger.info(
+            f"{update.message.from_user.name} ({update.message.from_user.id}) requested lyrics for song {update.message.text}"
+        )
+
+        song = [
+            x.strip() for x in update.message.text.replace("/lyrix", "").split("$by")
+        ]
+        if len(song) != 2:
+            update.message.reply_text(
+                "You should use {song} $by {artist} format to get the lyrics of a song"
+            )
+            return
+        msg = update.message.reply_text(
+            f"Fetching lyrics for the song {song[0]} by {song[1]} 🎸"
+        )
+        lx = sl.get_lyrics(song[0], song[1])
+        if lx == "" or lx is None:
+            msg.edit_text("Sorry, couldn't fetch the lyrics for that song 😭")
+            return
+        msg.edit_text(lx + "\n\n<i>Lyrics provided by Genius</i>", parse_mode=ParseMode.HTML)
+
     def telegram_id(self, update: Update, _: CallbackContext) -> None:
         update.message.reply_text(
             f"<b>Telegram Id:</b> {update.message.from_user.id}",
