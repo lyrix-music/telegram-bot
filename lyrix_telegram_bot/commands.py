@@ -288,7 +288,9 @@ class CommandInterface:
         if lx == "" or lx is None:
             msg.edit_text("Sorry, couldn't fetch the lyrics for that song 😭")
             return
-        msg.edit_text(lx + "\n\n<i>Lyrics provided by Genius</i>", parse_mode=ParseMode.HTML)
+        msg.edit_text(
+            lx + "\n\n<i>Lyrics provided by Genius</i>", parse_mode=ParseMode.HTML
+        )
 
     def telegram_id(self, update: Update, _: CallbackContext) -> None:
         update.message.reply_text(
