@@ -8,11 +8,11 @@ import os
 from typing import Optional, Tuple
 import requests
 
-
 from lyrix_telegram_bot.models.user import LyrixUser
 
-STORAGE_JSON_PATH = "spotify.json"
+STORAGE_JSON_PATH = os.getenv("LYRIX_STORAGE_JSON_PATH", "spotify.json")
 DEFAULT_DATA = {"version": 1, "users": []}
+CACHE_DIR = os.getenv("LYRIX_CACHE_DIR", ".cache")
 
 
 class LyrixApp:
@@ -20,7 +20,7 @@ class LyrixApp:
 
     def __init__(self):
         self.db = DEFAULT_DATA.copy()
-        os.makedirs(".cache", exist_ok=True)
+        os.makedirs(CACHE_DIR, exist_ok=True)
 
     def load(self):
         if not os.path.exists(STORAGE_JSON_PATH):

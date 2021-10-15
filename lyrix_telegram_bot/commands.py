@@ -48,6 +48,7 @@ from lyrix_telegram_bot.models.song import Song
 from lyrix_telegram_bot.models.user import LyrixUser
 
 
+CACHE_DIR = os.getenv("LYRIX_CACHE_DIR", ".cache")
 lyrix_id_match = re.compile(r"lyrix@\((.*)\)")
 
 
@@ -402,7 +403,7 @@ class CommandInterface:
     def connect_spotify(update: Update, _: CallbackContext) -> None:
         """Gets the token of a user"""
         cache_path = os.path.join(
-            os.getcwd(), ".cache", f"cache-{update.message.from_user.id}"
+            CACHE_DIR, f"cache-{update.message.from_user.id}"
         )
 
         # remove the old cache if it exists
@@ -538,5 +539,4 @@ class CommandInterface:
                 )
             )
 
-        # cache only for two minutes, because by then, the user might have changed the song ¯\_(ツ)_/¯
-        update.inline_query.answer(results, cache_time=2 * 60)
+        update.inline_query.answer(results, cache_time=1)
