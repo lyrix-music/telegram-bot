@@ -402,9 +402,7 @@ class CommandInterface:
     @staticmethod
     def connect_spotify(update: Update, _: CallbackContext) -> None:
         """Gets the token of a user"""
-        cache_path = os.path.join(
-            CACHE_DIR, f"cache-{update.message.from_user.id}"
-        )
+        cache_path = os.path.join(CACHE_DIR, f"cache-{update.message.from_user.id}")
 
         # remove the old cache if it exists
         try:

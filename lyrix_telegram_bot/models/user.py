@@ -7,6 +7,7 @@ from lyrix_telegram_bot.constants import SCOPES
 
 CACHE_DIR = os.getenv("LYRIX_CACHE_DIR", ".cache")
 
+
 class LyrixUser:
     def __init__(
         self,
@@ -40,9 +41,7 @@ class LyrixUser:
 
     def get_access_token(self) -> str:
         handler = CacheFileHandler(
-            cache_path=os.path.join(
-                CACHE_DIR, f"cache-{self.telegram_user_id}"
-            ),
+            cache_path=os.path.join(CACHE_DIR, f"cache-{self.telegram_user_id}"),
             username=str(self.telegram_user_id),
         )
         spo = SpotifyOAuth(cache_handler=handler, scope=SCOPES)
@@ -87,9 +86,7 @@ class User:
 
     def get_access_token(self) -> str:
         handler = CacheFileHandler(
-            cache_path=os.path.join(
-                CACHE_DIR, f"cache-{self.telegram_user_id}"
-            ),
+            cache_path=os.path.join(CACHE_DIR, f"cache-{self.telegram_user_id}"),
             username=str(self.telegram_user_id),
         )
         spo = SpotifyOAuth(cache_handler=handler, scope=SCOPES)
